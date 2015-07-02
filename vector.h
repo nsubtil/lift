@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
  * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
+ * Copyright (c) 2015, Roche Molecular Systems Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +32,10 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
+#if ENABLE_TBB_BACKEND
+#include <thrust/system/tbb/vector.h>
+#endif
+
 #include "backends.h"
 #include "decorators.h"
 
@@ -53,6 +58,14 @@ struct backend_vector_type<cuda, T>
 {
     typedef thrust::device_vector<T> base_vector_type;
 };
+
+#if ENABLE_TBB_BACKEND
+template <typename T>
+struct backend_vector_type<intel_tbb, T>
+{
+    typedef thrust::system::tbb::vector<T> base_vector_type;
+};
+#endif
 
 template <typename T, typename IndexType = uint64>
 struct vector_view
