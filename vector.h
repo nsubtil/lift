@@ -36,6 +36,7 @@
 #include <thrust/system/tbb/vector.h>
 #endif
 
+#include "types.h"
 #include "backends.h"
 #include "decorators.h"
 
