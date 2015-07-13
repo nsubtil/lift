@@ -43,6 +43,7 @@
 
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_select.cuh>
+#include <cub/device/device_run_length_encode.cuh>
 // silence warnings from debug code in cub
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -129,6 +130,27 @@ struct parallel_thrust
         thrust::sort_by_key(keys.begin(), keys.end(), values.begin());
     }
 
+    // returns the size of the output key/value
+    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
+    static inline size_t reduce_by_key(KeyIterator keys_begin,
+                                       KeyIterator keys_end,
+                                       ValueIterator values_begin,
+                                       KeyIterator output_keys,
+                                       ValueIterator output_values,
+                                       vector<system, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        auto out = thrust::reduce_by_key(keys_begin,
+                                         keys_end,
+                                         values_begin,
+                                         output_keys,
+                                         output_values,
+                                         thrust::equal_to<typeof(*keys_begin)>(),
+                                         reduction_op);
+
+        return out.first - output_keys.begin();
+    }
+
     // returns the size of the output key/value vectors
     template <typename Key, typename Value, typename ReductionOp>
     static inline size_t reduce_by_key(vector<system, Key>& keys,
@@ -138,14 +160,28 @@ struct parallel_thrust
                                        vector<system, uint8>& temp_storage,
                                        ReductionOp reduction_op)
     {
-        auto out = thrust::reduce_by_key(keys.begin(),
-                                         keys.end(),
-                                         values.begin(),
-                                         output_keys.begin(),
-                                         output_values.begin(),
-                                         thrust::equal_to<Key>(),
-                                         reduction_op);
-        return out.first - output_keys.begin();
+        return reduce_by_key(keys.begin(),
+                             keys.end(),
+                             values.begin(),
+                             output_keys.begin(),
+                             output_values.begin(),
+                             temp_storage,
+                             reduction_op);
+    }
+
+    // computes a run length encoding
+    // returns the number of runs
+    template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
+    static inline size_t run_length_encode(InputIterator keys_input,
+                                           size_t num_keys,
+                                           UniqueOutputIterator unique_keys_output,
+                                           LengthOutputIterator run_lengths_output,
+                                           vector<system, uint8>& temp_storage)
+    {
+        return thrust::reduce_by_key(keys_input, keys_input + num_keys,
+                                     thrust::constant_iterator<uint32>(1),
+                                     unique_keys_output,
+                                     run_lengths_output).first - unique_keys_output;
     }
 
     static inline void synchronize()
@@ -166,6 +202,7 @@ struct parallel : public parallel_thrust<system>
     using parallel_thrust<system>::sum;
     using parallel_thrust<system>::sort_by_key;
     using parallel_thrust<system>::reduce_by_key;
+    using parallel_thrust<system>::run_length_encode;
 
     using parallel_thrust<system>::synchronize;
     using parallel_thrust<system>::check_errors;
@@ -188,6 +225,13 @@ struct parallel<cuda> : public parallel_thrust<cuda>
     {
         lift::for_each(vector.begin(), vector.size(), f, launch_parameters);
         return vector.end();
+    }
+
+    // shortcut to run for_each on an integer range
+    template <typename UnaryFunction>
+    static inline void for_each(uint32 start, uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 })
+    {
+        parallel::for_each(thrust::make_counting_iterator(start), thrust::make_counting_iterator(end), f, launch_parameters);
     }
 
     template <typename InputIterator, typename OutputIterator, typename Predicate>
@@ -359,33 +403,84 @@ struct parallel<cuda> : public parallel_thrust<cuda>
         output_keys.resize(len);
         output_values.resize(len);
 
+        return reduce_by_key(keys.begin(),
+                             keys.end(),
+                             values.begin(),
+                             output_keys.begin(),
+                             output_values.begin(),
+                             temp_storage,
+                             reduction_op);
+    }
+
+    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
+    static inline size_t reduce_by_key(KeyIterator keys_begin,
+                                       KeyIterator keys_end,
+                                       ValueIterator values_begin,
+                                       KeyIterator output_keys,
+                                       ValueIterator output_values,
+                                       vector<cuda, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        const size_t len = keys_end - keys_begin;
+
         vector<cuda, uint32> num_segments(1);
 
         size_t temp_storage_bytes = 0;
 
         cub::DeviceReduce::ReduceByKey(nullptr,
                                        temp_storage_bytes,
-                                       thrust::raw_pointer_cast(keys.data()),
-                                       thrust::raw_pointer_cast(output_keys.data()),
-                                       thrust::raw_pointer_cast(values.data()),
-                                       thrust::raw_pointer_cast(output_values.data()),
+                                       keys_begin,
+                                       output_keys,
+                                       values_begin,
+                                       output_values,
                                        thrust::raw_pointer_cast(num_segments.data()),
                                        reduction_op,
-                                       keys.size());
+                                       len);
 
         temp_storage.resize(temp_storage_bytes);
 
         cub::DeviceReduce::ReduceByKey(thrust::raw_pointer_cast(temp_storage.data()),
                                        temp_storage_bytes,
-                                       thrust::raw_pointer_cast(keys.data()),
-                                       thrust::raw_pointer_cast(output_keys.data()),
-                                       thrust::raw_pointer_cast(values.data()),
-                                       thrust::raw_pointer_cast(output_values.data()),
+                                       keys_begin,
+                                       output_keys,
+                                       values_begin,
+                                       output_values,
                                        thrust::raw_pointer_cast(num_segments.data()),
                                        reduction_op,
-                                       keys.size());
+                                       len);
 
         return num_segments[0];
+    }
+
+    template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
+    static inline size_t run_length_encode(InputIterator keys_input,
+                                           size_t num_keys,
+                                           UniqueOutputIterator unique_keys_output,
+                                           LengthOutputIterator run_lengths_output,
+                                           vector<cuda, uint8>& temp_storage)
+    {
+        vector<cuda, int64> result(1);
+        size_t temp_bytes = 0;
+
+        cub::DeviceRunLengthEncode::Encode(nullptr,
+                                           temp_bytes,
+                                           keys_input,
+                                           unique_keys_output,
+                                           run_lengths_output,
+                                           thrust::raw_pointer_cast(result.data()),
+                                           num_keys);
+
+        temp_storage.resize(temp_bytes);
+
+        cub::DeviceRunLengthEncode::Encode(thrust::raw_pointer_cast(temp_storage.data()),
+                                           temp_bytes,
+                                           keys_input,
+                                           unique_keys_output,
+                                           run_lengths_output,
+                                           thrust::raw_pointer_cast(result.data()),
+                                           num_keys);
+
+        return size_t(result[0]);
     }
 
     static inline void synchronize(void)
