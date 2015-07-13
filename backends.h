@@ -89,7 +89,7 @@ struct backend_policy<intel_tbb>
 #define __METHOD_CUDA(base, method) auto ptr_cuda = &base<lift::cuda>::method;
 
 #if ENABLE_TBB_BACKEND
-#define __FUNC_TBB(fun) auto *ptr_TBB= fun<firepony::intel_tbb>;
+#define __FUNC_TBB(fun) auto *ptr_TBB= fun<lift::intel_tbb>;
 #define __METHOD_TBB(base, method) auto ptr_TBB = &base<lift::intel_tbb>::method;
 #else
 #define __FUNC_TBB(fun) ;

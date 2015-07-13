@@ -115,7 +115,7 @@ struct parallel_thrust
                             size_t len,
                             vector<system, uint8>& temp_storage)
     {
-        return thrust::reduce(first, first + len, int64(0));
+        return thrust::reduce(lift::backend_policy<system>::execution_policy(), first, first + len, int64(0));
     }
 
     template <typename Key, typename Value>
