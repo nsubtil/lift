@@ -277,4 +277,7 @@ struct vector : public backend_vector_type<system, T>::base_vector_type
     }
 };
 
+template <typename T> using d_vector = vector<cuda, T>;
+template <typename T> using h_vector = vector<host, T>;
+
 } // namespace lift
