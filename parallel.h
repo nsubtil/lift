@@ -67,14 +67,40 @@ struct parallel_thrust
     template <typename InputIterator, typename UnaryFunction>
     static inline InputIterator for_each(InputIterator first, InputIterator last, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        return thrust::for_each(lift::backend_policy<system>::execution_policy(), first, last, f);
+        return thrust::for_each(lift::backend_policy<system>::execution_policy(),
+                                first,
+                                last,
+                                f);
     }
 
     // shortcut to run for_each on a whole vector
     template <typename T, typename UnaryFunction>
     static inline typename vector<system, T>::iterator for_each(vector<system, T>& vector, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        return thrust::for_each(lift::backend_policy<system>::par, vector.begin(), vector.end(), f);
+        return thrust::for_each(lift::backend_policy<system>::execution_policy(),
+                                vector.begin(),
+                                vector.end(),
+                                f);
+    }
+
+    // shortcut to run for_each on [range.x, range.y[
+    template <typename UnaryFunction>
+    static inline void for_each(uint2 range, UnaryFunction f, int2 launch_parameters = { 0, 0 })
+    {
+        thrust::for_each(lift::backend_policy<system>::execution_policy(),
+                         thrust::make_counting_iterator(range.x),
+                         thrust::make_counting_iterator(range.y),
+                         f);
+    }
+
+    // shortcut to run for_each on [0, end[
+    template <typename UnaryFunction>
+    static inline void for_each(uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 })
+    {
+        thrust::for_each(lift::backend_policy<system>::execution_policy(),
+                         thrust::make_counting_iterator(0u),
+                         thrust::make_counting_iterator(end),
+                         f);
     }
 
     template <typename InputIterator, typename OutputIterator, typename Predicate>
@@ -215,7 +241,10 @@ struct parallel<cuda> : public parallel_thrust<cuda>
     template <typename InputIterator, typename UnaryFunction>
     static inline InputIterator for_each(InputIterator first, InputIterator last, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        lift::for_each(first, last - first, f, launch_parameters);
+        lift::for_each(first,
+                       last - first,
+                       f,
+                       launch_parameters);
         return last;
     }
 
@@ -223,15 +252,32 @@ struct parallel<cuda> : public parallel_thrust<cuda>
     template <typename T, typename UnaryFunction>
     static inline typename vector<cuda, T>::iterator for_each(vector<cuda, T>& vector, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        lift::for_each(vector.begin(), vector.size(), f, launch_parameters);
+        lift::for_each(vector.begin(),
+                       vector.size(),
+                       f,
+                       launch_parameters);
+
         return vector.end();
     }
 
-    // shortcut to run for_each on an integer range
+    // shortcut to run for_each on [range.x, range.y[
     template <typename UnaryFunction>
-    static inline void for_each(uint32 start, uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 })
+    static inline void for_each(uint2 range, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        parallel::for_each(thrust::make_counting_iterator(start), thrust::make_counting_iterator(end), f, launch_parameters);
+        parallel::for_each(thrust::make_counting_iterator(range.x),
+                           thrust::make_counting_iterator(range.y),
+                           f,
+                           launch_parameters);
+    }
+
+    // shortcut to run for_each on [0, end[
+    template <typename UnaryFunction>
+    static inline void for_each(uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 })
+    {
+        parallel::for_each(thrust::make_counting_iterator(0u),
+                           thrust::make_counting_iterator(end),
+                           f,
+                           launch_parameters);
     }
 
     template <typename InputIterator, typename OutputIterator, typename Predicate>
