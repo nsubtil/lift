@@ -33,16 +33,6 @@
 #define ENABLE_TBB_BACKEND 1
 #endif
 
-#include <thrust/device_vector.h>
-
-#include <thrust/system/cuda/vector.h>
-
-#if ENABLE_TBB_BACKEND
-#include <thrust/system/tbb/vector.h>
-#endif
-
-#include <thrust/execution_policy.h>
-
 namespace lift {
 
 enum target_system
@@ -55,6 +45,21 @@ enum target_system
 #endif
 };
 
+} // namespace lift
+
+#if defined(__CUDACC__)
+
+#include <thrust/device_vector.h>
+
+#include <thrust/system/cuda/vector.h>
+
+#if ENABLE_TBB_BACKEND
+#include <thrust/system/tbb/vector.h>
+#endif
+
+#include <thrust/execution_policy.h>
+
+namespace lift {
 
 template <target_system system>
 struct backend_policy
@@ -82,6 +87,8 @@ struct backend_policy<intel_tbb>
 #endif
 
 } // namespace lift
+
+#endif // defined(__CUDACC__)
 
 // ugly macro hackery to force arbitrary device function / method instantiation
 // note: we intentionally never instantiate device functions for the host system
