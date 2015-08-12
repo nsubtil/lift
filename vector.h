@@ -270,6 +270,36 @@ struct vector : public backend_vector_type<system, T>::base_vector_type
                           base::size());
     }
 
+    view range(off_t offset, size_t size = size_t(-1))
+    {
+        if (base::size() == 0)
+        {
+            return view(nullptr, 0);
+        }
+
+        if (size == size_t(-1))
+        {
+            size = base::size() - offset;
+        }
+
+        return view(thrust::raw_pointer_cast(base::data()) + offset, size);
+    }
+
+    const_view range(off_t offset, size_t size = size_t(-1)) const
+    {
+        if (base::size() == 0)
+        {
+            return const_view(nullptr, 0);
+        }
+
+        if (size == size_t(-1))
+        {
+            size = base::size() - offset;
+        }
+
+        return const_view(thrust::raw_pointer_cast(base::data()) + offset, size);
+    }
+
     // assignment from a host vector view
     void copy_from_view(const typename vector<host, T>::const_view& other)
     {
