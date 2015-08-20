@@ -1,4 +1,6 @@
 /*
+ * Lift
+ *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
  * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
  * Copyright (c) 2015, Roche Molecular Systems Inc.
@@ -37,7 +39,6 @@ namespace lift {
 
 enum target_system
 {
-    // host denotes the host CPU and is not meant to be used as a compute backend
     host,
     cuda,
 #if ENABLE_TBB_BACKEND
@@ -69,6 +70,8 @@ struct backend_policy
 template <>
 struct backend_policy<cuda>
 {
+    typedef thrust::system::cuda::tag tag;
+
     static inline decltype(thrust::cuda::par)& execution_policy(void)
     {
         return thrust::cuda::par;
@@ -79,6 +82,19 @@ struct backend_policy<cuda>
 template <>
 struct backend_policy<intel_tbb>
 {
+    typedef thrust::system::tbb::tag tag;
+
+    static inline decltype(thrust::tbb::par)& execution_policy(void)
+    {
+        return thrust::tbb::par;
+    }
+};
+
+template <>
+struct backend_policy<host>
+{
+    typedef thrust::system::tbb::tag tag;
+
     static inline decltype(thrust::tbb::par)& execution_policy(void)
     {
         return thrust::tbb::par;
