@@ -235,12 +235,12 @@ struct vector_view
 
     CUDA_HOST_DEVICE value_type* data() noexcept
     {
-        return m_vec;
+        return (value_type *)(m_vec);
     }
 
     CUDA_HOST_DEVICE const value_type* data() const noexcept
     {
-        return m_vec;
+        return (const value_type *)(m_vec);
     }
 
 private:
