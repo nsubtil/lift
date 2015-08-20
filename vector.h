@@ -285,7 +285,7 @@ struct vector : public backend_vector_type<system, T>::base_vector_type
         return view(thrust::raw_pointer_cast(base::data()) + offset, size);
     }
 
-    const_view range(off_t offset, size_t size = size_t(-1)) const
+    const_view const_range(off_t offset, size_t size = size_t(-1)) const
     {
         if (base::size() == 0)
         {
@@ -298,6 +298,11 @@ struct vector : public backend_vector_type<system, T>::base_vector_type
         }
 
         return const_view(thrust::raw_pointer_cast(base::data()) + offset, size);
+    }
+
+    const_view range(off_t offset, size_t size = size_t(-1)) const
+    {
+        return const_range(offset, size);
     }
 
     // assignment from a host vector view

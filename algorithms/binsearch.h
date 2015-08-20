@@ -69,4 +69,37 @@ CUDA_HOST_DEVICE uint32 binary_search(const T *data, uint32 size, const T val)
     return uint32(-1);
 }
 
+// perform a binary search on a sorted array
+// return the index of the first element that is >= val
+template <typename T>
+CUDA_HOST_DEVICE uint32 lower_bound(const T *data, uint32 size, const T val)
+{
+    uint32 first = 0;
+    uint32 last = size;
+
+    while(last - first > 0)
+    {
+        uint32 i = first + ((last - first) / 2);
+
+        if (data[i] < val)
+        {
+            if (i == first)
+            {
+                first++;
+            } else {
+                first = i;
+            }
+        } else {
+            if (i == last)
+            {
+                last--;
+            } else {
+                last = i;
+            }
+        }
+    }
+
+    return last;
+}
+
 } // namespace lift
