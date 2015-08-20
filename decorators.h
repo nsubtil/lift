@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
  * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
+ * Copyright (c) 2015, Roche Molecular Systems, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,15 +30,24 @@
 #pragma once
 
 #if defined(__CUDACC__)
-#define CUDA_HOST_DEVICE __host__ __device__
-#define CUDA_HOST __host__
-#define CUDA_DEVICE __device__
+#define LIFT_HOST_DEVICE __host__ __device__
+#define LIFT_HOST __host__
+#define LIFT_DEVICE __device__
+#define __lift_hd_warning_disable__ \
+    #pragma hd_warning_disable
 #else
-#define CUDA_HOST_DEVICE
-#define CUDA_HOST
-#define CUDA_DEVICE
+#define LIFT_HOST_DEVICE
+#define LIFT_HOST
+#define LIFT_DEVICE
 #endif
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 0
-#define CUDA_DEVICE_COMPILATION
+#define LIFT_DEVICE_COMPILATION 1
+#else
+#define LIFT_DEVICE_COMPILATION 0
 #endif
+
+#define CUDA_HOST_DEVICE LIFT_HOST_DEVICE
+#define CUDA_HOST LIFT_HOST
+#define CUDA_DEVICE LIFT_DEVICE
+#define CUDA_DEVICE_COMPILATION LIFT_DEVICE_COMPILATION
