@@ -30,7 +30,7 @@
 
 #define WAR_CUB_COPY_FLAGGED 1
 
-#include <common/types.h>
+#include "types.h"
 
 #include "decorators.h"
 #include "backends.h"

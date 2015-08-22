@@ -40,12 +40,12 @@
 namespace lift {
 namespace memory {
 
-template <typename value_type, typename other_value_type>
+template <typename dst_value_type, typename src_value_type>
 static constexpr LIFT_HOST_DEVICE bool check_value_type_assignment_compatible(void)
 {
-    // the types must either be the same, or our type must be a const version of their type
-    static_assert(std::is_same<      value_type, other_value_type>::value ||
-                  std::is_same<const value_type, other_value_type>::value,
+    // the types must either be the same, or dst must be const src
+    static_assert(std::is_same<      dst_value_type, src_value_type>::value ||
+                  std::is_same<const dst_value_type, src_value_type>::value,
                   "incompatible memory_pointer data types in assignment");
     return true;
 }
