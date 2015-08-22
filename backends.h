@@ -54,6 +54,8 @@ enum target_system
 
 #include <thrust/system/cuda/vector.h>
 
+#endif
+
 #if ENABLE_TBB_BACKEND
 #include <thrust/system/tbb/vector.h>
 #endif
@@ -103,8 +105,6 @@ struct backend_policy<host>
 #endif
 
 } // namespace lift
-
-#endif // defined(__CUDACC__)
 
 // ugly macro hackery to force arbitrary device function / method instantiation
 // note: we intentionally never instantiate device functions for the host system
