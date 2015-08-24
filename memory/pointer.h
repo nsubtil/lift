@@ -74,8 +74,8 @@ struct tagged_pointer_base
         : storage(nullptr), storage_size(0)
     { }
 
-    template <target_system other_system>
-    LIFT_HOST_DEVICE tagged_pointer_base(tagged_pointer_base<other_system, value_type, index_type>& other)
+    template <target_system other_system, typename other_value_type>
+    LIFT_HOST_DEVICE tagged_pointer_base(tagged_pointer_base<other_system, other_value_type, index_type>& other)
     {
         if (system == other_system)
         {
@@ -101,8 +101,8 @@ struct tagged_pointer_base
         }
     }
 
-    template <target_system other_system>
-    LIFT_HOST_DEVICE tagged_pointer_base& operator=(tagged_pointer_base<other_system, value_type, index_type>& other)
+    template <target_system other_system, typename other_value_type>
+    LIFT_HOST_DEVICE tagged_pointer_base& operator=(tagged_pointer_base<other_system, other_value_type, index_type>& other)
     {
         if (system == other_system)
         {
