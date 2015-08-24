@@ -207,6 +207,7 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
     typedef typename base::reference_type               reference_type;
     typedef typename base::const_reference_type         const_reference_type;
     typedef typename base::value_type                   value_type;
+    typedef typename base::index_type                   index_type;
     typedef typename base::size_type                    size_type;
     typedef typename base::iterator_type                iterator_type;
     typedef typename base::const_iterator_type          const_iterator_type;
@@ -253,6 +254,22 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
     {
         return &base::storage[base::storage_size - 1];
     }
+
+    // return a pointer to a memory range within this pointer
+    LIFT_HOST_DEVICE pointer range(const size_type offset, size_type len = size_type(-1)) const
+    {
+        pointer ret;
+        ret.storage = base::storage + offset;
+
+        if (len == size_type(-1))
+        {
+            len = base::storage_size - offset;
+        }
+
+        ret.storage_size = len;
+
+        return ret;
+    }
 };
 
 template <typename T,
@@ -264,6 +281,7 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
     typedef typename base::reference_type               reference_type;
     typedef typename base::const_reference_type         const_reference_type;
     typedef typename base::value_type                   value_type;
+    typedef typename base::index_type                   index_type;
     typedef typename base::size_type                    size_type;
     typedef typename base::iterator_type                iterator_type;
     typedef typename base::const_iterator_type          const_iterator_type;
@@ -328,6 +346,22 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
 
     // we don't implement front() or back() on the host
 #endif
+
+    // return a pointer to a memory range within this pointer
+    LIFT_HOST_DEVICE pointer range(const size_type offset, size_type len = size_type(-1)) const
+    {
+        pointer ret;
+        ret.storage = base::storage + offset;
+
+        if (len == size_type(-1))
+        {
+            len = base::storage_size - offset;
+        }
+
+        ret.storage_size = len;
+
+        return ret;
+    }
 
 protected:
     // this is slow
