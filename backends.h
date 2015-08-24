@@ -71,7 +71,7 @@ struct backend_policy<cuda>
 {
     typedef thrust::system::cuda::tag tag;
 
-    static inline decltype(thrust::cuda::par)& execution_policy(void)
+    static inline decltype(thrust::cuda::par) execution_policy(void)
     {
         return thrust::cuda::par;
     }
@@ -83,7 +83,7 @@ struct backend_policy<host>
 {
     typedef thrust::system::tbb::tag tag;
 
-    static inline decltype(thrust::tbb::par)& execution_policy(void)
+    static inline decltype(thrust::tbb::par) execution_policy(void)
     {
         return thrust::tbb::par;
     }
