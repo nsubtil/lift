@@ -73,6 +73,14 @@ struct allocation : public pointer<system, T, _index_type>
         resize(count);
     }
 
+    // create allocation from pointer
+    // this should probably be disallowed and done differently
+    template <typename value_type>
+    allocation(const pointer<system, value_type, index_type>& other)
+    {
+        *this = other;
+    }
+
     // initializer list semantics: make a copy of the contents
     allocation(const std::initializer_list<value_type>& l)
         : base()
@@ -84,6 +92,17 @@ struct allocation : public pointer<system, T, _index_type>
             storage_write(offset, i);
             offset++;
         }
+    }
+
+    // assign allocation from pointer
+    // this should probably be disallowed and done differently
+    template <typename value_type>
+    allocation& operator=(const pointer<system, value_type, index_type>& other)
+    {
+        storage = other.data();
+        storage_size = other.size();
+
+        return *this;
     }
 
     // initializer list semantics: make a copy of the contents
