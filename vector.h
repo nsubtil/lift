@@ -60,14 +60,6 @@ struct backend_vector_type<cuda, T>
     typedef thrust::device_vector<T> base_vector_type;
 };
 
-#if ENABLE_TBB_BACKEND
-template <typename T>
-struct backend_vector_type<intel_tbb, T>
-{
-    typedef thrust::system::tbb::vector<T> base_vector_type;
-};
-#endif
-
 template <typename T, typename IndexType = uint64>
 struct vector_view
 {

@@ -41,9 +41,6 @@ enum target_system
 {
     host,
     cuda,
-#if ENABLE_TBB_BACKEND
-    intel_tbb,
-#endif
 };
 
 } // namespace lift
@@ -82,17 +79,6 @@ struct backend_policy<cuda>
 
 #if ENABLE_TBB_BACKEND
 template <>
-struct backend_policy<intel_tbb>
-{
-    typedef thrust::system::tbb::tag tag;
-
-    static inline decltype(thrust::tbb::par)& execution_policy(void)
-    {
-        return thrust::tbb::par;
-    }
-};
-
-template <>
 struct backend_policy<host>
 {
     typedef thrust::system::tbb::tag tag;
@@ -112,8 +98,8 @@ struct backend_policy<host>
 #define __METHOD_CUDA(base, method) auto ptr_cuda = &base<lift::cuda>::method;
 
 #if ENABLE_TBB_BACKEND
-#define __FUNC_TBB(fun) auto *ptr_TBB= fun<lift::intel_tbb>;
-#define __METHOD_TBB(base, method) auto ptr_TBB = &base<lift::intel_tbb>::method;
+#define __FUNC_TBB(fun) auto *ptr_TBB= fun<lift::host>;
+#define __METHOD_TBB(base, method) auto ptr_TBB = &base<lift::host>::method;
 #else
 #define __FUNC_TBB(fun) ;
 #define __METHOD_TBB(base, method) ;
