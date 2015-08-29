@@ -250,7 +250,7 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
         return &base::storage[base::storage_size - 1];
     }
 
-    LIFT_HOST_DEVICE const_reference_type back()
+    LIFT_HOST_DEVICE reference_type back()
     {
         return &base::storage[base::storage_size - 1];
     }
