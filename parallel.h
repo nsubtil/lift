@@ -45,10 +45,16 @@
 #include <cub/device/device_select.cuh>
 #include <cub/device/device_run_length_encode.cuh>
 // silence warnings from debug code in cub
+#ifdef __GNU_C__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include <cub/device/device_radix_sort.cuh>
+
+#ifdef __GNU_C__
 #pragma GCC diagnostic pop
+#endif
 
 namespace lift {
 
