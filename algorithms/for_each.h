@@ -67,6 +67,15 @@ void for_each(InputIterator input, size_t length, Function func, int2 launch_par
 //            printf("computed launch params (32): %d %d\n", params_32.x, params_32.y);
             for_each_kernel<InputIterator, Function, uint32> <<<params_32.x, params_32.y>>>(input, length, func);
         }
+    } else if (launch_params.x == 0) {
+        launch_params.x = int((length + launch_params.y - 1) / launch_params.y);
+
+        if (uint64(length) + launch_params.x * launch_params.y >= uint64(1 << 31))
+        {
+            for_each_kernel<InputIterator, Function, uint64> <<<launch_params.x, launch_params.y>>>(input, length, func);
+        } else {
+            for_each_kernel<InputIterator, Function, uint32> <<<launch_params.x, launch_params.y>>>(input, length, func);
+        }
     } else {
         // make sure the launch parameters are not overcommitted
         int max_blocks = int((length + launch_params.y - 1) / launch_params.y);

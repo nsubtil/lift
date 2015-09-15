@@ -277,20 +277,20 @@ struct parallel<cuda> : public parallel_thrust<cuda>
     template <typename UnaryFunction>
     static inline void for_each(uint2 range, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        parallel::for_each(thrust::make_counting_iterator(range.x),
-                           thrust::make_counting_iterator(range.y),
-                           f,
-                           launch_parameters);
+        lift::for_each(thrust::make_counting_iterator(range.x),
+                       range.y - range.x,
+                       f,
+                       launch_parameters);
     }
 
     // shortcut to run for_each on [0, end[
     template <typename UnaryFunction>
     static inline void for_each(uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 })
     {
-        parallel::for_each(thrust::make_counting_iterator(0u),
-                           thrust::make_counting_iterator(end),
-                           f,
-                           launch_parameters);
+        lift::for_each(thrust::make_counting_iterator(0u),
+                       end,
+                       f,
+                       launch_parameters);
     }
 
     template <typename InputIterator, typename OutputIterator, typename Predicate>
