@@ -307,4 +307,55 @@ struct vector : public backend_vector_type<system, T>::base_vector_type
 template <typename T> using d_vector = vector<cuda, T>;
 template <typename T> using h_vector = vector<host, T>;
 
+template <typename T, uint32 stride, typename IndexType = uint64>
+struct strided_iterator
+{
+    typedef T*                                                          iterator;
+    typedef const T*                                                    const_iterator;
+    typedef typename thrust::iterator_traits<iterator>::value_type      value_type;
+    typedef typename thrust::iterator_traits<iterator>::reference       reference;
+    typedef typename thrust::iterator_traits<const_iterator>::reference const_reference;
+    typedef typename thrust::iterator_traits<iterator>::pointer         pointer;
+    typedef typename thrust::iterator_traits<const_iterator>::pointer   const_pointer;
+    typedef typename thrust::reverse_iterator<iterator>                 reverse_iterator;
+    typedef typename thrust::reverse_iterator<const_iterator>           const_reverse_iterator;
+    typedef typename thrust::iterator_traits<iterator>::difference_type difference_type;
+    typedef IndexType                                                   size_type;
+
+    CUDA_HOST_DEVICE
+    strided_iterator() = default;
+
+    CUDA_HOST_DEVICE
+    strided_iterator(T *base)
+        : m_vec(base)
+    { }
+
+    CUDA_HOST_DEVICE inline size_type offset(size_type elem) const
+    {
+        return elem * stride;
+    }
+
+    CUDA_HOST_DEVICE reference operator[](size_type n)
+    {
+        return m_vec[offset(n)];
+    }
+
+    CUDA_HOST_DEVICE const_reference operator[](size_type n) const
+    {
+        return m_vec[offset(n)];
+    }
+
+    CUDA_HOST_DEVICE reference at(size_type n)
+    {
+        return m_vec[offset(n)];
+    }
+
+    CUDA_HOST_DEVICE const_reference at(size_type n) const
+    {
+        return m_vec[offset(n)];
+    }
+
+    T *m_vec;
+};
+
 } // namespace lift
