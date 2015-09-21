@@ -32,6 +32,7 @@
 
 #include "types.h"
 
+#include "vector.h"
 #include "decorators.h"
 #include "backends.h"
 #include "memory.h"
@@ -133,6 +134,20 @@ struct parallel_thrust
         return out_last - result;
     }
 
+    template <typename InputIterator, typename OutputIterator, typename Predicate>
+    static inline size_t copy_if(InputIterator first,
+                                 size_t len,
+                                 OutputIterator result,
+                                 Predicate op,
+                                 vector<system, uint8>& temp_storage)
+    {
+        // use the fallback thrust version
+        OutputIterator out_last;
+        out_last = thrust::copy_if(lift::backend_policy<system>::execution_policy(),
+                                   first, first + len, result, op);
+        return out_last - result;
+    }
+
     template <typename InputIterator, typename FlagIterator, typename OutputIterator>
     static inline size_t copy_flagged(InputIterator first,
                                       size_t len,
@@ -155,12 +170,33 @@ struct parallel_thrust
                               first, first + len, int64(0));
     }
 
+    template <typename InputIterator>
+    static inline int64 sum(InputIterator first,
+                            size_t len,
+                            vector<system, uint8>& temp_storage)
+    {
+        return thrust::reduce(lift::backend_policy<system>::execution_policy(),
+                              first, first + len, int64(0));
+    }
+
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<system, Key>& keys,
                                    pointer<system, Value>& values,
                                    pointer<system, Key>& temp_keys,
                                    pointer<system, Value>& temp_values,
                                    allocation<system, uint8>& temp_storage,
+                                   int num_key_bits = sizeof(Key) * 8)
+    {
+        thrust::sort_by_key(lift::backend_policy<system>::execution_policy(),
+                            keys.begin(), keys.end(), values.begin());
+    }
+
+    template <typename Key, typename Value>
+    static inline void sort_by_key(vector<system, Key>& keys,
+                                   vector<system, Value>& values,
+                                   vector<system, Key>& temp_keys,
+                                   vector<system, Value>& temp_values,
+                                   vector<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8)
     {
         thrust::sort_by_key(lift::backend_policy<system>::execution_policy(),
@@ -186,7 +222,28 @@ struct parallel_thrust
                                          thrust::equal_to<typeof(*keys_begin)>(),
                                          reduction_op);
 
-        return out.first - output_keys.begin();
+        return out.first - output_keys;
+    }
+
+    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
+    static inline size_t reduce_by_key(KeyIterator keys_begin,
+                                       KeyIterator keys_end,
+                                       ValueIterator values_begin,
+                                       KeyIterator output_keys,
+                                       ValueIterator output_values,
+                                       vector<system, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        auto out = thrust::reduce_by_key(lift::backend_policy<system>::execution_policy(),
+                                         keys_begin,
+                                         keys_end,
+                                         values_begin,
+                                         output_keys,
+                                         output_values,
+                                         thrust::equal_to<typeof(*keys_begin)>(),
+                                         reduction_op);
+
+        return out.first - output_keys;
     }
 
     // returns the size of the output key/value vectors
@@ -196,6 +253,23 @@ struct parallel_thrust
                                        pointer<system, Key>& output_keys,
                                        pointer<system, Value>& output_values,
                                        allocation<system, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        return reduce_by_key(keys.begin(),
+                             keys.end(),
+                             values.begin(),
+                             output_keys.begin(),
+                             output_values.begin(),
+                             temp_storage,
+                             reduction_op);
+    }
+
+    template <typename Key, typename Value, typename ReductionOp>
+    static inline size_t reduce_by_key(vector<system, Key>& keys,
+                                       vector<system, Value>& values,
+                                       vector<system, Key>& output_keys,
+                                       vector<system, Value>& output_values,
+                                       vector<system, uint8>& temp_storage,
                                        ReductionOp reduction_op)
     {
         return reduce_by_key(keys.begin(),
@@ -336,6 +410,39 @@ struct parallel<cuda> : public parallel_thrust<cuda>
         return size_t(num_selected[0]);
     }
 
+    template <typename InputIterator, typename OutputIterator, typename Predicate>
+    static inline size_t copy_if(InputIterator first,
+                                 size_t len,
+                                 OutputIterator result,
+                                 Predicate op,
+                                 vector<cuda, uint8>& temp_storage)
+    {
+        scoped_allocation<cuda, int32> num_selected(1);
+
+        // determine amount of temp storage required
+        size_t temp_bytes = 0;
+        cub::DeviceSelect::If(nullptr,
+                              temp_bytes,
+                              first,
+                              result,
+                              num_selected.begin(),
+                              len,
+                              op);
+
+        // make sure we have enough temp storage
+        temp_storage.resize(temp_bytes);
+
+        cub::DeviceSelect::If(thrust::raw_pointer_cast(temp_storage.data()),
+                              temp_bytes,
+                              first,
+                              result,
+                              num_selected.begin(),
+                              len,
+                              op);
+
+        return size_t(num_selected[0]);
+    }
+
     // xxxnsubtil: cub::DeviceSelect::Flagged seems problematic
 #if !WAR_CUB_COPY_FLAGGED
     template <typename InputIterator, typename FlagIterator, typename OutputIterator>
@@ -399,6 +506,31 @@ struct parallel<cuda> : public parallel_thrust<cuda>
         return int64(result[0]);
     }
 
+    template <typename InputIterator>
+    static inline int64 sum(InputIterator first,
+                            size_t len,
+                            vector<cuda, uint8>& temp_storage)
+    {
+        scoped_allocation<cuda, int64> result(1);
+
+        size_t temp_bytes = 0;
+        cub::DeviceReduce::Sum(nullptr,
+                               temp_bytes,
+                               first,
+                               result.begin(),
+                               len);
+
+        temp_storage.resize(temp_bytes);
+
+        cub::DeviceReduce::Sum(thrust::raw_pointer_cast(temp_storage.data()),
+                               temp_bytes,
+                               first,
+                               result.begin(),
+                               len);
+
+        return int64(result[0]);
+    }
+
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<cuda, Key>& keys,
                                    pointer<cuda, Value>& values,
@@ -446,6 +578,55 @@ struct parallel<cuda> : public parallel_thrust<cuda>
         }
     }
 
+    template <typename Key, typename Value>
+    static inline void sort_by_key(vector<cuda, Key>& keys,
+                                   vector<cuda, Value>& values,
+                                   vector<cuda, Key>& temp_keys,
+                                   vector<cuda, Value>& temp_values,
+                                   vector<cuda, uint8>& temp_storage,
+                                   int num_key_bits = sizeof(Key) * 8)
+    {
+        const size_t len = keys.size();
+        assert(keys.size() == values.size());
+
+        temp_keys.resize(len);
+        temp_values.resize(len);
+
+        cub::DoubleBuffer<Key> d_keys(thrust::raw_pointer_cast(keys.data()),
+                                      thrust::raw_pointer_cast(temp_keys.data()));
+        cub::DoubleBuffer<Value> d_values(thrust::raw_pointer_cast(values.data()),
+                                          thrust::raw_pointer_cast(temp_values.data()));
+
+        size_t temp_storage_bytes = 0;
+        cub::DeviceRadixSort::SortPairs(nullptr,
+                                        temp_storage_bytes,
+                                        d_keys,
+                                        d_values,
+                                        len,
+                                        0,
+                                        num_key_bits);
+
+        temp_storage.resize(temp_storage_bytes);
+
+        cub::DeviceRadixSort::SortPairs(thrust::raw_pointer_cast(temp_storage.data()),
+                                        temp_storage_bytes,
+                                        d_keys,
+                                        d_values,
+                                        len,
+                                        0,
+                                        num_key_bits);
+
+        if (thrust::raw_pointer_cast(keys.data()) != d_keys.Current())
+        {
+            cudaMemcpy(thrust::raw_pointer_cast(keys.data()), d_keys.Current(), sizeof(Key) * len, cudaMemcpyDeviceToDevice);
+        }
+
+        if (thrust::raw_pointer_cast(values.data()) != d_values.Current())
+        {
+            cudaMemcpy(thrust::raw_pointer_cast(values.data()), d_values.Current(), sizeof(Value) * len, cudaMemcpyDeviceToDevice);
+        }
+    }
+
     // returns the size of the output key/value vectors
     template <typename Key, typename Value, typename ReductionOp>
     static inline size_t reduce_by_key(pointer<cuda, Key>& keys,
@@ -453,6 +634,29 @@ struct parallel<cuda> : public parallel_thrust<cuda>
                                        pointer<cuda, Key>& output_keys,
                                        pointer<cuda, Value>& output_values,
                                        allocation<cuda, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        const size_t len = keys.size();
+        assert(keys.size() == values.size());
+
+        output_keys.resize(len);
+        output_values.resize(len);
+
+        return reduce_by_key(keys.begin(),
+                             keys.end(),
+                             values.begin(),
+                             output_keys.begin(),
+                             output_values.begin(),
+                             temp_storage,
+                             reduction_op);
+    }
+
+    template <typename Key, typename Value, typename ReductionOp>
+    static inline size_t reduce_by_key(vector<cuda, Key>& keys,
+                                       vector<cuda, Value>& values,
+                                       vector<cuda, Key>& output_keys,
+                                       vector<cuda, Value>& output_values,
+                                       vector<cuda, uint8>& temp_storage,
                                        ReductionOp reduction_op)
     {
         const size_t len = keys.size();
@@ -498,6 +702,46 @@ struct parallel<cuda> : public parallel_thrust<cuda>
         temp_storage.resize(temp_storage_bytes);
 
         cub::DeviceReduce::ReduceByKey(temp_storage.data(),
+                                       temp_storage_bytes,
+                                       keys_begin,
+                                       output_keys,
+                                       values_begin,
+                                       output_values,
+                                       num_segments.data(),
+                                       reduction_op,
+                                       len);
+
+        return num_segments[0];
+    }
+
+    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
+    static inline size_t reduce_by_key(KeyIterator keys_begin,
+                                       KeyIterator keys_end,
+                                       ValueIterator values_begin,
+                                       KeyIterator output_keys,
+                                       ValueIterator output_values,
+                                       vector<cuda, uint8>& temp_storage,
+                                       ReductionOp reduction_op)
+    {
+        const size_t len = keys_end - keys_begin;
+
+        scoped_allocation<cuda, uint32> num_segments(1);
+
+        size_t temp_storage_bytes = 0;
+
+        cub::DeviceReduce::ReduceByKey(nullptr,
+                                       temp_storage_bytes,
+                                       keys_begin,
+                                       output_keys,
+                                       values_begin,
+                                       output_values,
+                                       num_segments.data(),
+                                       reduction_op,
+                                       len);
+
+        temp_storage.resize(temp_storage_bytes);
+
+        cub::DeviceReduce::ReduceByKey(thrust::raw_pointer_cast(temp_storage.data()),
                                        temp_storage_bytes,
                                        keys_begin,
                                        output_keys,
