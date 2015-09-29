@@ -28,7 +28,7 @@
 
 #pragma once
 
-#define WAR_CUB_COPY_FLAGGED 1
+#include <iterator>
 
 #include "types.h"
 
@@ -98,14 +98,14 @@ struct parallel<host>
                                       allocation<host, uint8>& temp_storage);
 
     template <typename InputIterator>
-    static inline int64 sum(InputIterator first,
-                            size_t len,
-                            allocation<host, uint8>& temp_storage);
+    static inline auto sum(InputIterator first,
+                           size_t len,
+                           allocation<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename InputIterator>
-    static inline int64 sum(InputIterator first,
-                            size_t len,
-                            vector<host, uint8>& temp_storage);
+    static inline auto sum(InputIterator first,
+                           size_t len,
+                           vector<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<host, Key>& keys,
@@ -224,14 +224,14 @@ struct parallel<cuda>
                                       vector<cuda, uint8>& temp_storage);
 
     template <typename InputIterator>
-    static inline int64 sum(InputIterator first,
-                            size_t len,
-                            allocation<cuda, uint8>& temp_storage);
+    static inline auto sum(InputIterator first,
+                           size_t len,
+                           allocation<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename InputIterator>
-    static inline int64 sum(InputIterator first,
-                            size_t len,
-                            vector<cuda, uint8>& temp_storage);
+    static inline auto sum(InputIterator first,
+                           size_t len,
+                           vector<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<cuda, Key>& keys,
@@ -298,5 +298,5 @@ struct parallel<cuda>
 
 } // namespace lift
 
-#include "parallel_host.inl"
-#include "parallel_cuda.inl"
+#include "parallel/parallel_cuda.inl"
+#include "parallel/parallel_host.inl"

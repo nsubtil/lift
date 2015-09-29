@@ -45,9 +45,18 @@
 #pragma GCC diagnostic pop
 #endif
 
-#include "algorithms/cuda/for_each.h"
+#include "../types.h"
+#include "../algorithms/cuda/for_each.h"
 
 namespace lift {
+
+struct device_copy_if_flagged
+{
+    LIFT_DEVICE bool operator() (const uint8 val)
+    {
+        return bool(val);
+    }
+};
 
 template <typename InputIterator, typename UnaryFunction>
 InputIterator parallel<cuda>::for_each(InputIterator first,
@@ -212,17 +221,19 @@ size_t parallel<cuda>::copy_flagged(InputIterator first,
 #else
     OutputIterator out_last;
     out_last = thrust::copy_if(lift::backend_policy<cuda>::execution_policy(),
-                               first, first + len, flags, result, copy_if_flagged());
+                               first, first + len, flags, result, device_copy_if_flagged());
     return out_last - result;
 #endif
 }
 
 template <typename InputIterator>
-int64 parallel<cuda>::sum(InputIterator first,
-                          size_t len,
-                          allocation<cuda, uint8>& temp_storage)
+auto parallel<cuda>::sum(InputIterator first,
+                         size_t len,
+                         allocation<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
 {
-    scoped_allocation<cuda, int64> result(1);
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+
+    scoped_allocation<cuda, value_type> result(1);
 
     size_t temp_bytes = 0;
     cub::DeviceReduce::Sum(nullptr,
@@ -239,15 +250,17 @@ int64 parallel<cuda>::sum(InputIterator first,
                            result.begin(),
                            len);
 
-    return int64(result[0]);
+    return value_type(result[0]);
 }
 
 template <typename InputIterator>
-int64 parallel<cuda>::sum(InputIterator first,
-                          size_t len,
-                          vector<cuda, uint8>& temp_storage)
+auto parallel<cuda>::sum(InputIterator first,
+                         size_t len,
+                         vector<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
 {
-    scoped_allocation<cuda, int64> result(1);
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+
+    scoped_allocation<cuda, value_type> result(1);
 
     size_t temp_bytes = 0;
     cub::DeviceReduce::Sum(nullptr,
@@ -264,7 +277,7 @@ int64 parallel<cuda>::sum(InputIterator first,
                            result.begin(),
                            len);
 
-    return int64(result[0]);
+    return value_type(result[0]);
 }
 
 template <typename Key, typename Value>

@@ -34,7 +34,7 @@
 
 namespace lift {
 
-struct copy_if_flagged
+struct host_copy_if_flagged
 {
     bool operator() (const uint8 val)
     {
@@ -107,10 +107,9 @@ size_t parallel<host>::copy_if(InputIterator first,
                                Predicate op,
                                allocation<host, uint8>& temp_storage)
 {
-    // use the fallback thrust version
     OutputIterator out_last;
-    out_last = thrust::copy_if(lift::backend_policy<host>::execution_policy(),
-                               first, first + len, result, op);
+    out_last = thrust::system::tbb::detail::copy_if(typename lift::backend_policy<host>::tag(),
+                                                    first, first + len, first, result, op);
     return out_last - result;
 }
 
@@ -123,8 +122,8 @@ size_t parallel<host>::copy_if(InputIterator first,
 {
     // use the fallback thrust version
     OutputIterator out_last;
-    out_last = thrust::copy_if(lift::backend_policy<host>::execution_policy(),
-                               first, first + len, result, op);
+    out_last = thrust::system::tbb::detail::copy_if(typename lift::backend_policy<host>::tag(),
+                                                    first, first + len, first, result, op);
     return out_last - result;
 }
 
@@ -137,26 +136,8 @@ size_t parallel<host>::copy_flagged(InputIterator first,
 {
     OutputIterator out_last;
     out_last = thrust::copy_if(lift::backend_policy<host>::execution_policy(),
-                               first, first + len, flags, result, copy_if_flagged());
+                               first, first + len, flags, result, host_copy_if_flagged());
     return out_last - result;
-}
-
-template <typename InputIterator>
-int64 parallel<host>::sum(InputIterator first,
-                          size_t len,
-                          allocation<host, uint8>& temp_storage)
-{
-    return thrust::reduce(lift::backend_policy<host>::execution_policy(),
-                          first, first + len, int64(0));
-}
-
-template <typename InputIterator>
-int64 parallel<host>::sum(InputIterator first,
-                          size_t len,
-                          vector<host, uint8>& temp_storage)
-{
-    return thrust::reduce(lift::backend_policy<host>::execution_policy(),
-                          first, first + len, int64(0));
 }
 
 template <typename Key, typename Value>
@@ -284,3 +265,5 @@ void parallel<host>::check_errors(void)
 { }
 
 } // namespace lift
+
+#include "tbb/reduction.inl"
