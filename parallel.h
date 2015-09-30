@@ -41,22 +41,18 @@ namespace lift {
 
 template <target_system system>
 struct parallel
-{ };
-
-template <>
-struct parallel<host>
 {
     template <typename InputIterator, typename UnaryFunction>
-    static inline InputIterator for_each(InputIterator first,
-                                         InputIterator last,
-                                         UnaryFunction f,
-                                         int2 launch_parameters = { 0, 0 });
+    static inline void for_each(InputIterator first,
+                                InputIterator last,
+                                UnaryFunction f,
+                                int2 launch_parameters = { 0, 0 });
 
     // shortcut to run for_each on a lift pointer
     template <typename T, typename UnaryFunction>
-    static inline typename pointer<host, T>::iterator for_each(pointer<host, T>& vector,
-                                                               UnaryFunction f,
-                                                               int2 launch_parameters = { 0, 0 });
+    static inline void for_each(pointer<system, T>& vector,
+                                UnaryFunction f,
+                                int2 launch_parameters = { 0, 0 });
 
     // shortcut to run for_each on [range.x, range.y[
     template <typename UnaryFunction>
@@ -81,46 +77,53 @@ struct parallel<host>
                                  size_t len,
                                  OutputIterator result,
                                  Predicate op,
-                                 allocation<host, uint8>& temp_storage);
+                                 allocation<system, uint8>& temp_storage);
 
     template <typename InputIterator, typename OutputIterator, typename Predicate>
     static inline size_t copy_if(InputIterator first,
                                  size_t len,
                                  OutputIterator result,
                                  Predicate op,
-                                 vector<host, uint8>& temp_storage);
+                                 vector<system, uint8>& temp_storage);
 
     template <typename InputIterator, typename FlagIterator, typename OutputIterator>
     static inline size_t copy_flagged(InputIterator first,
                                       size_t len,
                                       OutputIterator result,
                                       FlagIterator flags,
-                                      allocation<host, uint8>& temp_storage);
+                                      allocation<system, uint8>& temp_storage);
+
+    template <typename InputIterator, typename FlagIterator, typename OutputIterator>
+    static inline size_t copy_flagged(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      FlagIterator flags,
+                                      vector<system, uint8>& temp_storage);
 
     template <typename InputIterator>
     static inline auto sum(InputIterator first,
                            size_t len,
-                           allocation<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
+                           allocation<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename InputIterator>
     static inline auto sum(InputIterator first,
                            size_t len,
-                           vector<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
+                           vector<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename Key, typename Value>
-    static inline void sort_by_key(pointer<host, Key>& keys,
-                                   pointer<host, Value>& values,
-                                   pointer<host, Key>& temp_keys,
-                                   pointer<host, Value>& temp_values,
-                                   allocation<host, uint8>& temp_storage,
+    static inline void sort_by_key(pointer<system, Key>& keys,
+                                   pointer<system, Value>& values,
+                                   pointer<system, Key>& temp_keys,
+                                   pointer<system, Value>& temp_values,
+                                   allocation<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
     template <typename Key, typename Value>
-    static inline void sort_by_key(vector<host, Key>& keys,
-                                   vector<host, Value>& values,
-                                   vector<host, Key>& temp_keys,
-                                   vector<host, Value>& temp_values,
-                                   vector<host, uint8>& temp_storage,
+    static inline void sort_by_key(vector<system, Key>& keys,
+                                   vector<system, Value>& values,
+                                   vector<system, Key>& temp_keys,
+                                   vector<system, Value>& temp_values,
+                                   vector<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
     // returns the size of the output key/value
@@ -130,7 +133,7 @@ struct parallel<host>
                                        ValueIterator values_begin,
                                        KeyIterator output_keys,
                                        ValueIterator output_values,
-                                       allocation<host, uint8>& temp_storage,
+                                       allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
     template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
@@ -139,24 +142,24 @@ struct parallel<host>
                                        ValueIterator values_begin,
                                        KeyIterator output_keys,
                                        ValueIterator output_values,
-                                       vector<host, uint8>& temp_storage,
+                                       vector<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
     // returns the size of the output key/value vectors
     template <typename Key, typename Value, typename ReductionOp>
-    static inline size_t reduce_by_key(pointer<host, Key>& keys,
-                                       pointer<host, Value>& values,
-                                       pointer<host, Key>& output_keys,
-                                       pointer<host, Value>& output_values,
-                                       allocation<host, uint8>& temp_storage,
+    static inline size_t reduce_by_key(pointer<system, Key>& keys,
+                                       pointer<system, Value>& values,
+                                       pointer<system, Key>& output_keys,
+                                       pointer<system, Value>& output_values,
+                                       allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
     template <typename Key, typename Value, typename ReductionOp>
-    static inline size_t reduce_by_key(vector<host, Key>& keys,
-                                       vector<host, Value>& values,
-                                       vector<host, Key>& output_keys,
-                                       vector<host, Value>& output_values,
-                                       vector<host, uint8>& temp_storage,
+    static inline size_t reduce_by_key(vector<system, Key>& keys,
+                                       vector<system, Value>& values,
+                                       vector<system, Key>& output_keys,
+                                       vector<system, Value>& output_values,
+                                       vector<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
     // computes a run length encoding
@@ -166,13 +169,14 @@ struct parallel<host>
                                            size_t num_keys,
                                            UniqueOutputIterator unique_keys_output,
                                            LengthOutputIterator run_lengths_output,
-                                           allocation<host, uint8>& temp_storage);
+                                           allocation<system, uint8>& temp_storage);
 
     static inline void synchronize();
 
     static inline void check_errors(void);
 };
 
+#if 0
 template <>
 struct parallel<cuda>
 {
@@ -295,6 +299,7 @@ struct parallel<cuda>
 
     static inline void check_errors(void);
 };
+#endif
 
 } // namespace lift
 

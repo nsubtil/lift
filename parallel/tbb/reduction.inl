@@ -35,17 +35,22 @@
 
 namespace lift {
 
+namespace __lift_tbb_reduction {
+
+// below this many elements we prefer to do summation sequentially
+constexpr uint32 sum_sequential_threshold = 10000;
+
 template <typename InputIterator>
-struct tbb_reduction_sum_operator
+struct sum_operator
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
     value_type value;
 
-    tbb_reduction_sum_operator()
+    sum_operator()
         : value(0)
     { }
 
-    tbb_reduction_sum_operator(tbb_reduction_sum_operator&, tbb::split)
+    sum_operator(sum_operator&, tbb::split)
         : value(0)
     { }
 
@@ -60,30 +65,60 @@ struct tbb_reduction_sum_operator
         value = temp;
     }
 
-    void join(tbb_reduction_sum_operator& rhs)
+    void join(sum_operator& rhs)
     {
         value += rhs.value;
     }
 };
 
+} // namespace __lift_tbb_reduction
+
+template <>
 template <typename InputIterator>
-auto parallel<host>::sum(InputIterator first,
-                         size_t len,
-                         allocation<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
+inline auto parallel<host>::sum(InputIterator first,
+                                size_t len,
+                                allocation<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
 {
-    tbb_reduction_sum_operator<InputIterator> sum;
-    tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
-    return sum.value;
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+
+    if (len < __lift_tbb_reduction::sum_sequential_threshold || true)
+    {
+        value_type v = 0;
+        for(auto i = first; i < first + len; i++)
+        {
+            v += *i;
+        }
+
+        return v;
+    } else {
+        __lift_tbb_reduction::sum_operator<InputIterator> sum;
+        tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
+        return sum.value;
+    }
 }
 
+template <>
 template <typename InputIterator>
-auto parallel<host>::sum(InputIterator first,
-                         size_t len,
-                         vector<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
+inline auto parallel<host>::sum(InputIterator first,
+                                size_t len,
+                                vector<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
 {
-    tbb_reduction_sum_operator<InputIterator> sum;
-    tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
-    return sum.value;
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+
+    if (len < __lift_tbb_reduction::sum_sequential_threshold || true)
+    {
+        value_type v = 0;
+        for(auto i = first; i < first + len; i++)
+        {
+            v += *i;
+        }
+
+        return v;
+    } else {
+        __lift_tbb_reduction::sum_operator<InputIterator> sum;
+        tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
+        return sum.value;
+    }
 }
 
 } // namespace lift

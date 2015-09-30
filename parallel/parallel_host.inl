@@ -42,35 +42,38 @@ struct host_copy_if_flagged
     }
 };
 
+template <>
 template <typename InputIterator, typename UnaryFunction>
-InputIterator parallel<host>::for_each(InputIterator first,
-                                       InputIterator last,
-                                       UnaryFunction f,
-                                       int2 launch_parameters)
+inline void parallel<host>::for_each(InputIterator first,
+                                     InputIterator last,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
-    return thrust::for_each(lift::backend_policy<host>::execution_policy(),
-                            first,
-                            last,
-                            f);
+    thrust::for_each(lift::backend_policy<host>::execution_policy(),
+                     first,
+                     last,
+                     f);
 }
 
 // shortcut to run for_each on a lift pointer
+template <>
 template <typename T, typename UnaryFunction>
-typename pointer<host, T>::iterator parallel<host>::for_each(pointer<host, T>& vector,
-                                                             UnaryFunction f,
-                                                             int2 launch_parameters)
+inline void parallel<host>::for_each(pointer<host, T>& vector,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
-    return thrust::for_each(lift::backend_policy<host>::execution_policy(),
-                            vector.begin(),
-                            vector.end(),
-                            f);
+    thrust::for_each(lift::backend_policy<host>::execution_policy(),
+                     vector.begin(),
+                     vector.end(),
+                     f);
 }
 
 // shortcut to run for_each on [range.x, range.y[
+template <>
 template <typename UnaryFunction>
-void parallel<host>::for_each(uint2 range,
-                              UnaryFunction f,
-                              int2 launch_parameters)
+inline void parallel<host>::for_each(uint2 range,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     thrust::for_each(lift::backend_policy<host>::execution_policy(),
                      thrust::make_counting_iterator(range.x),
@@ -79,10 +82,11 @@ void parallel<host>::for_each(uint2 range,
 }
 
 // shortcut to run for_each on [0, end[
+template <>
 template <typename UnaryFunction>
-void parallel<host>::for_each(uint32 end,
-                              UnaryFunction f,
-                              int2 launch_parameters)
+inline void parallel<host>::for_each(uint32 end,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     thrust::for_each(lift::backend_policy<host>::execution_policy(),
                      thrust::make_counting_iterator(0u),
@@ -90,22 +94,24 @@ void parallel<host>::for_each(uint32 end,
                      f);
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-void parallel<host>::inclusive_scan(InputIterator first,
-                                    size_t len,
-                                    OutputIterator result,
-                                    Predicate op)
+inline void parallel<host>::inclusive_scan(InputIterator first,
+                                           size_t len,
+                                           OutputIterator result,
+                                           Predicate op)
 {
     thrust::inclusive_scan(lift::backend_policy<host>::execution_policy(),
                            first, first + len, result, op);
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-size_t parallel<host>::copy_if(InputIterator first,
-                               size_t len,
-                               OutputIterator result,
-                               Predicate op,
-                               allocation<host, uint8>& temp_storage)
+inline size_t parallel<host>::copy_if(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      Predicate op,
+                                      allocation<host, uint8>& temp_storage)
 {
     OutputIterator out_last;
     out_last = thrust::system::tbb::detail::copy_if(typename lift::backend_policy<host>::tag(),
@@ -113,12 +119,13 @@ size_t parallel<host>::copy_if(InputIterator first,
     return out_last - result;
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-size_t parallel<host>::copy_if(InputIterator first,
-                               size_t len,
-                               OutputIterator result,
-                               Predicate op,
-                               vector<host, uint8>& temp_storage)
+inline size_t parallel<host>::copy_if(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      Predicate op,
+                                      vector<host, uint8>& temp_storage)
 {
     // use the fallback thrust version
     OutputIterator out_last;
@@ -127,12 +134,13 @@ size_t parallel<host>::copy_if(InputIterator first,
     return out_last - result;
 }
 
+template <>
 template <typename InputIterator, typename FlagIterator, typename OutputIterator>
-size_t parallel<host>::copy_flagged(InputIterator first,
-                                    size_t len,
-                                    OutputIterator result,
-                                    FlagIterator flags,
-                                    allocation<host, uint8>& temp_storage)
+inline size_t parallel<host>::copy_flagged(InputIterator first,
+                                           size_t len,
+                                           OutputIterator result,
+                                           FlagIterator flags,
+                                           allocation<host, uint8>& temp_storage)
 {
     OutputIterator out_last;
     out_last = thrust::copy_if(lift::backend_policy<host>::execution_policy(),
@@ -140,39 +148,42 @@ size_t parallel<host>::copy_flagged(InputIterator first,
     return out_last - result;
 }
 
+template <>
 template <typename Key, typename Value>
-void parallel<host>::sort_by_key(pointer<host, Key>& keys,
-                                 pointer<host, Value>& values,
-                                 pointer<host, Key>& temp_keys,
-                                 pointer<host, Value>& temp_values,
-                                 allocation<host, uint8>& temp_storage,
-                                 int num_key_bits)
+inline void parallel<host>::sort_by_key(pointer<host, Key>& keys,
+                                        pointer<host, Value>& values,
+                                        pointer<host, Key>& temp_keys,
+                                        pointer<host, Value>& temp_values,
+                                        allocation<host, uint8>& temp_storage,
+                                        int num_key_bits)
 {
     thrust::sort_by_key(lift::backend_policy<host>::execution_policy(),
                         keys.begin(), keys.end(), values.begin());
 }
 
+template <>
 template <typename Key, typename Value>
-void parallel<host>::sort_by_key(vector<host, Key>& keys,
-                                 vector<host, Value>& values,
-                                 vector<host, Key>& temp_keys,
-                                 vector<host, Value>& temp_values,
-                                 vector<host, uint8>& temp_storage,
-                                 int num_key_bits)
+inline void parallel<host>::sort_by_key(vector<host, Key>& keys,
+                                        vector<host, Value>& values,
+                                        vector<host, Key>& temp_keys,
+                                        vector<host, Value>& temp_values,
+                                        vector<host, uint8>& temp_storage,
+                                        int num_key_bits)
 {
     thrust::sort_by_key(lift::backend_policy<host>::execution_policy(),
                         keys.begin(), keys.end(), values.begin());
 }
 
 // returns the size of the output key/value
+template <>
 template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
-                                     KeyIterator keys_end,
-                                     ValueIterator values_begin,
-                                     KeyIterator output_keys,
-                                     ValueIterator output_values,
-                                     allocation<host, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
+                                            KeyIterator keys_end,
+                                            ValueIterator values_begin,
+                                            KeyIterator output_keys,
+                                            ValueIterator output_values,
+                                            allocation<host, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     auto out = thrust::reduce_by_key(lift::backend_policy<host>::execution_policy(),
                                      keys_begin,
@@ -186,14 +197,15 @@ size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
     return out.first - output_keys;
 }
 
+template <>
 template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
-                                     KeyIterator keys_end,
-                                     ValueIterator values_begin,
-                                     KeyIterator output_keys,
-                                     ValueIterator output_values,
-                                     vector<host, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
+                                            KeyIterator keys_end,
+                                            ValueIterator values_begin,
+                                            KeyIterator output_keys,
+                                            ValueIterator output_values,
+                                            vector<host, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     auto out = thrust::reduce_by_key(lift::backend_policy<host>::execution_policy(),
                                      keys_begin,
@@ -208,13 +220,14 @@ size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
 }
 
 // returns the size of the output key/value vectors
+template <>
 template <typename Key, typename Value, typename ReductionOp>
-size_t parallel<host>::reduce_by_key(pointer<host, Key>& keys,
-                                     pointer<host, Value>& values,
-                                     pointer<host, Key>& output_keys,
-                                     pointer<host, Value>& output_values,
-                                     allocation<host, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<host>::reduce_by_key(pointer<host, Key>& keys,
+                                            pointer<host, Value>& values,
+                                            pointer<host, Key>& output_keys,
+                                            pointer<host, Value>& output_values,
+                                            allocation<host, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     return reduce_by_key(keys.begin(),
                          keys.end(),
@@ -225,13 +238,14 @@ size_t parallel<host>::reduce_by_key(pointer<host, Key>& keys,
                          reduction_op);
 }
 
+template <>
 template <typename Key, typename Value, typename ReductionOp>
-size_t parallel<host>::reduce_by_key(vector<host, Key>& keys,
-                                     vector<host, Value>& values,
-                                     vector<host, Key>& output_keys,
-                                     vector<host, Value>& output_values,
-                                     vector<host, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<host>::reduce_by_key(vector<host, Key>& keys,
+                                            vector<host, Value>& values,
+                                            vector<host, Key>& output_keys,
+                                            vector<host, Value>& output_values,
+                                            vector<host, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     return reduce_by_key(keys.begin(),
                          keys.end(),
@@ -244,12 +258,13 @@ size_t parallel<host>::reduce_by_key(vector<host, Key>& keys,
 
 // computes a run length encoding
 // returns the number of runs
+template <>
 template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
-size_t parallel<host>::run_length_encode(InputIterator keys_input,
-                                         size_t num_keys,
-                                         UniqueOutputIterator unique_keys_output,
-                                         LengthOutputIterator run_lengths_output,
-                                         allocation<host, uint8>& temp_storage)
+inline size_t parallel<host>::run_length_encode(InputIterator keys_input,
+                                                size_t num_keys,
+                                                UniqueOutputIterator unique_keys_output,
+                                                LengthOutputIterator run_lengths_output,
+                                                allocation<host, uint8>& temp_storage)
 {
     return thrust::reduce_by_key(lift::backend_policy<host>::execution_policy(),
                                  keys_input, keys_input + num_keys,
@@ -258,10 +273,12 @@ size_t parallel<host>::run_length_encode(InputIterator keys_input,
                                  run_lengths_output).first - unique_keys_output;
 }
 
-void parallel<host>::synchronize()
+template <>
+inline void parallel<host>::synchronize()
 { }
 
-void parallel<host>::check_errors(void)
+template <>
+inline void parallel<host>::check_errors(void)
 { }
 
 } // namespace lift

@@ -58,38 +58,38 @@ struct device_copy_if_flagged
     }
 };
 
+template <>
 template <typename InputIterator, typename UnaryFunction>
-InputIterator parallel<cuda>::for_each(InputIterator first,
-                                       InputIterator last,
-                                       UnaryFunction f,
-                                       int2 launch_parameters)
+inline void parallel<cuda>::for_each(InputIterator first,
+                                     InputIterator last,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     lift::for_each(first,
                    last - first,
                    f,
                    launch_parameters);
-    return last;
 }
 
 // shortcut to run for_each on a pointer
+template <>
 template <typename T, typename UnaryFunction>
-typename pointer<cuda, T>::iterator_type parallel<cuda>::for_each(pointer<cuda, T>& data,
-                                                                  UnaryFunction f,
-                                                                  int2 launch_parameters)
+inline void parallel<cuda>::for_each(pointer<cuda, T>& data,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     lift::for_each(data.begin(),
                    data.size(),
                    f,
                    launch_parameters);
-
-    return data.end();
 }
 
 // shortcut to run for_each on [range.x, range.y[
+template <>
 template <typename UnaryFunction>
-void parallel<cuda>::for_each(uint2 range,
-                              UnaryFunction f,
-                              int2 launch_parameters)
+inline void parallel<cuda>::for_each(uint2 range,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     lift::for_each(thrust::make_counting_iterator(range.x),
                    range.y - range.x,
@@ -98,10 +98,11 @@ void parallel<cuda>::for_each(uint2 range,
 }
 
 // shortcut to run for_each on [0, end[
+template <>
 template <typename UnaryFunction>
-void parallel<cuda>::for_each(uint32 end,
-                              UnaryFunction f,
-                              int2 launch_parameters)
+inline void parallel<cuda>::for_each(uint32 end,
+                                     UnaryFunction f,
+                                     int2 launch_parameters)
 {
     lift::for_each(thrust::make_counting_iterator(0u),
                    end,
@@ -109,22 +110,24 @@ void parallel<cuda>::for_each(uint32 end,
                    launch_parameters);
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-void parallel<cuda>::inclusive_scan(InputIterator first,
-                                    size_t len,
-                                    OutputIterator result,
-                                    Predicate op)
+inline void parallel<cuda>::inclusive_scan(InputIterator first,
+                                           size_t len,
+                                           OutputIterator result,
+                                           Predicate op)
 {
     thrust::inclusive_scan(lift::backend_policy<cuda>::execution_policy(),
                            first, first + len, result, op);
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-size_t parallel<cuda>::copy_if(InputIterator first,
-                               size_t len,
-                               OutputIterator result,
-                               Predicate op,
-                               allocation<cuda, uint8>& temp_storage)
+inline size_t parallel<cuda>::copy_if(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      Predicate op,
+                                      allocation<cuda, uint8>& temp_storage)
 {
     scoped_allocation<cuda, int32> num_selected(1);
 
@@ -152,12 +155,13 @@ size_t parallel<cuda>::copy_if(InputIterator first,
     return size_t(num_selected[0]);
 }
 
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
-size_t parallel<cuda>::copy_if(InputIterator first,
-                               size_t len,
-                               OutputIterator result,
-                               Predicate op,
-                               vector<cuda, uint8>& temp_storage)
+inline size_t parallel<cuda>::copy_if(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      Predicate op,
+                                      vector<cuda, uint8>& temp_storage)
 {
     scoped_allocation<cuda, int32> num_selected(1);
 
@@ -186,12 +190,13 @@ size_t parallel<cuda>::copy_if(InputIterator first,
 }
 
 // xxxnsubtil: cub::DeviceSelect::Flagged seems problematic
+template <>
 template <typename InputIterator, typename FlagIterator, typename OutputIterator>
-size_t parallel<cuda>::copy_flagged(InputIterator first,
-                                    size_t len,
-                                    OutputIterator result,
-                                    FlagIterator flags,
-                                    vector<cuda, uint8>& temp_storage)
+inline size_t parallel<cuda>::copy_flagged(InputIterator first,
+                                           size_t len,
+                                           OutputIterator result,
+                                           FlagIterator flags,
+                                           vector<cuda, uint8>& temp_storage)
 {
 #if !WAR_CUB_COPY_FLAGGED
     vector<cuda, size_t> num_selected(1);
@@ -226,10 +231,12 @@ size_t parallel<cuda>::copy_flagged(InputIterator first,
 #endif
 }
 
+template <>
 template <typename InputIterator>
-auto parallel<cuda>::sum(InputIterator first,
-                         size_t len,
-                         allocation<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
+inline auto parallel<cuda>::sum(InputIterator first,
+                                size_t len,
+                                allocation<cuda, uint8>& temp_storage)
+    -> typename std::iterator_traits<InputIterator>::value_type
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
 
@@ -253,10 +260,12 @@ auto parallel<cuda>::sum(InputIterator first,
     return value_type(result[0]);
 }
 
+template <>
 template <typename InputIterator>
-auto parallel<cuda>::sum(InputIterator first,
-                         size_t len,
-                         vector<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
+inline auto parallel<cuda>::sum(InputIterator first,
+                                size_t len,
+                                vector<cuda, uint8>& temp_storage)
+    -> typename std::iterator_traits<InputIterator>::value_type
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
 
@@ -280,13 +289,14 @@ auto parallel<cuda>::sum(InputIterator first,
     return value_type(result[0]);
 }
 
+template <>
 template <typename Key, typename Value>
-void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
-                                 pointer<cuda, Value>& values,
-                                 pointer<cuda, Key>& temp_keys,
-                                 pointer<cuda, Value>& temp_values,
-                                 allocation<cuda, uint8>& temp_storage,
-                                 int num_key_bits)
+inline void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
+                                        pointer<cuda, Value>& values,
+                                        pointer<cuda, Key>& temp_keys,
+                                        pointer<cuda, Value>& temp_values,
+                                        allocation<cuda, uint8>& temp_storage,
+                                        int num_key_bits)
 {
     const size_t len = keys.size();
     assert(keys.size() == values.size());
@@ -327,13 +337,14 @@ void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
     }
 }
 
+template <>
 template <typename Key, typename Value>
-void parallel<cuda>::sort_by_key(vector<cuda, Key>& keys,
-                                 vector<cuda, Value>& values,
-                                 vector<cuda, Key>& temp_keys,
-                                 vector<cuda, Value>& temp_values,
-                                 vector<cuda, uint8>& temp_storage,
-                                 int num_key_bits)
+inline void parallel<cuda>::sort_by_key(vector<cuda, Key>& keys,
+                                        vector<cuda, Value>& values,
+                                        vector<cuda, Key>& temp_keys,
+                                        vector<cuda, Value>& temp_values,
+                                        vector<cuda, uint8>& temp_storage,
+                                        int num_key_bits)
 {
     const size_t len = keys.size();
     assert(keys.size() == values.size());
@@ -377,13 +388,14 @@ void parallel<cuda>::sort_by_key(vector<cuda, Key>& keys,
 }
 
 // returns the size of the output key/value vectors
+template <>
 template <typename Key, typename Value, typename ReductionOp>
-size_t parallel<cuda>::reduce_by_key(pointer<cuda, Key>& keys,
-                                     pointer<cuda, Value>& values,
-                                     pointer<cuda, Key>& output_keys,
-                                     pointer<cuda, Value>& output_values,
-                                     allocation<cuda, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<cuda>::reduce_by_key(pointer<cuda, Key>& keys,
+                                            pointer<cuda, Value>& values,
+                                            pointer<cuda, Key>& output_keys,
+                                            pointer<cuda, Value>& output_values,
+                                            allocation<cuda, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     const size_t len = keys.size();
     assert(keys.size() == values.size());
@@ -400,13 +412,14 @@ size_t parallel<cuda>::reduce_by_key(pointer<cuda, Key>& keys,
                          reduction_op);
 }
 
+template <>
 template <typename Key, typename Value, typename ReductionOp>
-size_t parallel<cuda>::reduce_by_key(vector<cuda, Key>& keys,
-                                     vector<cuda, Value>& values,
-                                     vector<cuda, Key>& output_keys,
-                                     vector<cuda, Value>& output_values,
-                                     vector<cuda, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<cuda>::reduce_by_key(vector<cuda, Key>& keys,
+                                            vector<cuda, Value>& values,
+                                            vector<cuda, Key>& output_keys,
+                                            vector<cuda, Value>& output_values,
+                                            vector<cuda, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     const size_t len = keys.size();
     assert(keys.size() == values.size());
@@ -423,14 +436,15 @@ size_t parallel<cuda>::reduce_by_key(vector<cuda, Key>& keys,
                          reduction_op);
 }
 
+template <>
 template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
-                                     KeyIterator keys_end,
-                                     ValueIterator values_begin,
-                                     KeyIterator output_keys,
-                                     ValueIterator output_values,
-                                     allocation<cuda, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
+                                            KeyIterator keys_end,
+                                            ValueIterator values_begin,
+                                            KeyIterator output_keys,
+                                            ValueIterator output_values,
+                                            allocation<cuda, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     const size_t len = keys_end - keys_begin;
 
@@ -463,14 +477,15 @@ size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
     return num_segments[0];
 }
 
+template <>
 template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
-                                     KeyIterator keys_end,
-                                     ValueIterator values_begin,
-                                     KeyIterator output_keys,
-                                     ValueIterator output_values,
-                                     vector<cuda, uint8>& temp_storage,
-                                     ReductionOp reduction_op)
+inline size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
+                                            KeyIterator keys_end,
+                                            ValueIterator values_begin,
+                                            KeyIterator output_keys,
+                                            ValueIterator output_values,
+                                            vector<cuda, uint8>& temp_storage,
+                                            ReductionOp reduction_op)
 {
     const size_t len = keys_end - keys_begin;
 
@@ -503,12 +518,13 @@ size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
     return num_segments[0];
 }
 
+template <>
 template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
-size_t parallel<cuda>::run_length_encode(InputIterator keys_input,
-                                         size_t num_keys,
-                                         UniqueOutputIterator unique_keys_output,
-                                         LengthOutputIterator run_lengths_output,
-                                         allocation<cuda, uint8>& temp_storage)
+inline size_t parallel<cuda>::run_length_encode(InputIterator keys_input,
+                                                size_t num_keys,
+                                                UniqueOutputIterator unique_keys_output,
+                                                LengthOutputIterator run_lengths_output,
+                                                allocation<cuda, uint8>& temp_storage)
 {
     scoped_allocation<cuda, int64> result(1);
     size_t temp_bytes = 0;
@@ -534,12 +550,14 @@ size_t parallel<cuda>::run_length_encode(InputIterator keys_input,
     return size_t(result[0]);
 }
 
-void parallel<cuda>::synchronize(void)
+template <>
+inline void parallel<cuda>::synchronize(void)
 {
     cudaDeviceSynchronize();
 }
 
-void parallel<cuda>::check_errors(void)
+template <>
+inline void parallel<cuda>::check_errors(void)
 {
     synchronize();
 
