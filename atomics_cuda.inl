@@ -37,11 +37,13 @@ namespace lift {
 
 #if LIFT_DEVICE_COMPILATION
 
+template <>
 inline LIFT_DEVICE int32 atomics<cuda>::add(int32 *address, int32 val)
 {
     return atomicAdd(address, val);
 }
 
+template <>
 inline LIFT_DEVICE float atomics<cuda>::add(float *address, float val)
 {
     return atomicAdd(address, val);

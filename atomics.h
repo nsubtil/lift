@@ -37,17 +37,6 @@ namespace lift {
 
 template <target_system system>
 struct atomics
-{ };
-
-template <>
-struct atomics<host>
-{
-    static inline LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
-    static inline LIFT_HOST_DEVICE float add(float *address, float val);
-};
-
-template <>
-struct atomics<cuda>
 {
     static inline LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
     static inline LIFT_HOST_DEVICE float add(float *address, float val);

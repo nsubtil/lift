@@ -35,11 +35,13 @@
 
 namespace lift {
 
+template <>
 inline LIFT_HOST int32 atomics<host>::add(int32 *address, int32 val)
 {
     return __atomic_fetch_add(address, val, __ATOMIC_SEQ_CST);
 }
 
+template <>
 inline LIFT_HOST float atomics<host>::add(float *address, float val)
 {
     volatile float *addr_v = address;
