@@ -33,6 +33,8 @@
 
 #include "backends.h"
 
+namespace lift {
+
 template <target_system system>
 struct atomics
 { };
@@ -40,16 +42,18 @@ struct atomics
 template <>
 struct atomics<host>
 {
-    static LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
-    static LIFT_HOST_DEVICE float add(float *address, float val);
+    static inline LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
+    static inline LIFT_HOST_DEVICE float add(float *address, float val);
 };
 
 template <>
 struct atomics<cuda>
 {
-    static LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
-    static LIFT_HOST_DEVICE float add(float *address, float val);
+    static inline LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
+    static inline LIFT_HOST_DEVICE float add(float *address, float val);
 };
+
+} // namespace lift
 
 #include "atomics_host.inl"
 #include "atomics_cuda.inl"

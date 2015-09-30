@@ -33,22 +33,20 @@
 
 #include "backends.h"
 
-inline LIFT_HOST_DEVICE int32 atomics<cuda>::add(int32 *address, int32 val)
-{
+namespace lift {
+
 #if LIFT_DEVICE_COMPILATION
+
+inline LIFT_DEVICE int32 atomics<cuda>::add(int32 *address, int32 val)
+{
     return atomicAdd(address, val);
-#else
-    abort();
-    return 0;
-#endif
 }
 
-inline LIFT_HOST_DEVICE float atomics<cuda>::add(float *address, float val)
+inline LIFT_DEVICE float atomics<cuda>::add(float *address, float val)
 {
-#if LIFT_DEVICE_COMPILATION
     return atomicAdd(address, val);
-#else
-    abort();
-    return 0.0;
-#endif
 }
+
+#endif
+
+} // namespace lift

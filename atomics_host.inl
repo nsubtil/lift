@@ -33,22 +33,15 @@
 
 #include "backends.h"
 
-inline LIFT_HOST_DEVICE int32 atomics<host>::add(int32 *address, int32 val)
+namespace lift {
+
+inline LIFT_HOST int32 atomics<host>::add(int32 *address, int32 val)
 {
-#if LIFT_DEVICE_COMPILATION
-    asm("trap;");
-    return 0;
-#else
     return __atomic_fetch_add(address, val, __ATOMIC_SEQ_CST);
-#endif
 }
 
-inline LIFT_HOST_DEVICE float atomics<host>::add(float *address, float val)
+inline LIFT_HOST float atomics<host>::add(float *address, float val)
 {
-#if LIFT_DEVICE_COMPILATION
-    asm("trap;");
-    return 0.0;
-#else
     volatile float *addr_v = address;
     volatile float oldval;
 
@@ -68,5 +61,6 @@ inline LIFT_HOST_DEVICE float atomics<host>::add(float *address, float val)
     }
 
     return oldval;
-#endif
 }
+
+} // namespace lift
