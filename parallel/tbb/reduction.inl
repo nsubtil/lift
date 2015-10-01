@@ -37,39 +37,71 @@ namespace lift {
 
 namespace __lift_tbb_reduction {
 
-// below this many elements we prefer to do summation sequentially
-constexpr uint32 sum_sequential_threshold = 10000;
+template <typename T>
+struct parameters
+{
+    static constexpr uint32 sequential_threshold = 500000;
+};
 
-template <typename InputIterator>
-struct sum_operator
+template <>
+struct parameters<float>
+{
+    static constexpr uint32 sequential_threshold = 50000;
+};
+
+template <>
+struct parameters<double>
+{
+    static constexpr uint32 sequential_threshold = 50000;
+};
+
+template <typename InputIterator, typename reduction_operator>
+inline auto parallel_reduction(InputIterator first,
+                               size_t len,
+                               const typename std::iterator_traits<InputIterator>::value_type& initial_value,
+                               reduction_operator reduction_op)
+    -> typename std::iterator_traits<InputIterator>::value_type
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
-    value_type value;
 
-    sum_operator()
-        : value(0)
-    { }
+    // applies op sequentially across a tbb blocked_range
+    // used as the range reduction operator for parallel_reduce
+    auto range_reduction_operator =
+            [&](const tbb::blocked_range<InputIterator>& range, const value_type& initial_value) -> value_type
+            {
+                value_type value = initial_value;
 
-    sum_operator(sum_operator&, tbb::split)
-        : value(0)
-    { }
+                for(value_type v : range)
+                {
+                    value = reduction_op(value, v);
+                }
 
-    void operator() (const tbb::blocked_range<InputIterator>& r)
+                return value;
+            };
+
+    return tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len),
+                                initial_value,
+                                range_reduction_operator,
+                                reduction_op);
+}
+
+template <typename InputIterator, typename reduction_operator>
+inline auto sequential_reduction(InputIterator first,
+                                 size_t len,
+                                 const typename std::iterator_traits<InputIterator>::value_type& initial_value,
+                                 reduction_operator op)
+    -> typename std::iterator_traits<InputIterator>::value_type
+{
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+
+    value_type ret = initial_value;
+    for(size_t i = 0; i < len; i++)
     {
-        value_type temp = value;
-        for(InputIterator a = r.begin(); a != r.end(); a++)
-        {
-            temp += *a;
-        }
-
-        value = temp;
+        ret = op(ret, *(first + i));
     }
 
-    void join(sum_operator& rhs)
-    {
-        value += rhs.value;
-    }
-};
+    return ret;
+}
 
 } // namespace __lift_tbb_reduction
 
@@ -81,19 +113,17 @@ inline auto parallel<host>::sum(InputIterator first,
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
 
-    if (len < __lift_tbb_reduction::sum_sequential_threshold || true)
-    {
-        value_type v = 0;
-        for(auto i = first; i < first + len; i++)
-        {
-            v += *i;
-        }
+    auto sum_operator =
+            [] (const value_type& a, const value_type& b) -> value_type
+            {
+                return a + b;
+            };
 
-        return v;
+    if (len <= __lift_tbb_reduction::parameters<value_type>::sequential_threshold)
+    {
+        return __lift_tbb_reduction::sequential_reduction(first, len, 0, sum_operator);
     } else {
-        __lift_tbb_reduction::sum_operator<InputIterator> sum;
-        tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
-        return sum.value;
+        return __lift_tbb_reduction::parallel_reduction(first, len, 0, sum_operator);
     }
 }
 
@@ -105,19 +135,17 @@ inline auto parallel<host>::sum(InputIterator first,
 {
     typedef typename std::iterator_traits<InputIterator>::value_type value_type;
 
-    if (len < __lift_tbb_reduction::sum_sequential_threshold || true)
-    {
-        value_type v = 0;
-        for(auto i = first; i < first + len; i++)
-        {
-            v += *i;
-        }
+    auto sum_operator =
+            [] (const value_type& a, const value_type& b) -> value_type
+            {
+                return a + b;
+            };
 
-        return v;
+    if (len <= __lift_tbb_reduction::parameters<value_type>::sequential_threshold)
+    {
+        return __lift_tbb_reduction::sequential_reduction(first, len, 0, sum_operator);
     } else {
-        __lift_tbb_reduction::sum_operator<InputIterator> sum;
-        tbb::parallel_reduce(tbb::blocked_range<InputIterator>(first, first + len), sum);
-        return sum.value;
+        return __lift_tbb_reduction::parallel_reduction(first, len, 0, sum_operator);
     }
 }
 
