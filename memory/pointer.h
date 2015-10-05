@@ -270,6 +270,13 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
 
         return ret;
     }
+
+    // poke a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    void poke(size_type pos, const value_type value)
+    {
+        base::storage[pos] = value;
+    }
 };
 
 template <typename T,
@@ -361,6 +368,13 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         ret.storage_size = len;
 
         return ret;
+    }
+
+    // poke a value behind this memory pointer
+    // note: this is slow!
+    void poke(size_type pos, const value_type value)
+    {
+        cudaMemcpy(&base::storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
     }
 
 protected:

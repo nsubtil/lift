@@ -89,7 +89,7 @@ struct allocation : public pointer<system, T, _index_type>
         index_type offset = 0;
         for(auto i : l)
         {
-            storage_write(offset, i);
+            base::poke(offset, i);
             offset++;
         }
     }
@@ -112,7 +112,7 @@ struct allocation : public pointer<system, T, _index_type>
         index_type offset = 0;
         for(auto i : l)
         {
-            storage_write(offset, i);
+            base::poke(offset, i);
             offset++;
         }
 
@@ -184,16 +184,6 @@ struct allocation : public pointer<system, T, _index_type>
     }
 
 protected:
-    void storage_write(size_type pos, const value_type value)
-    {
-        if (system == cuda)
-        {
-            cudaMemcpy(&storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
-        } else {
-            storage[pos] = value;
-        }
-    }
-
     void device_memory_copy(void *dst, const void *src, size_t size)
     {
         if (system == cuda)
