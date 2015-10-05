@@ -341,12 +341,13 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
     }
 #else
     // note: accessor methods on the host return a value, not a reference
-    LIFT_HOST value_type at(size_type pos) const
+    // also note: these have to be tagged host+device because they can be called from host+device code regardless
+    LIFT_HOST_DEVICE value_type at(size_type pos) const
     {
         return storage_read(pos);
     }
 
-    LIFT_HOST value_type operator[] (size_type pos) const
+    LIFT_HOST_DEVICE value_type operator[] (size_type pos) const
     {
         return storage_read(pos);
     }
