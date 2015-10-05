@@ -63,7 +63,7 @@ struct allocation : public pointer<system, T, _index_type>
     using base::storage;
     using base::storage_size;
 
-    allocation()
+    LIFT_HOST_DEVICE allocation()
         : base()
     { }
 
