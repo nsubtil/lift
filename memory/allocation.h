@@ -119,7 +119,7 @@ struct allocation : public pointer<system, T, _index_type>
         return *this;
     }
 
-    void resize(size_type count)
+    virtual void resize(size_type count)
     {
         size_type old_storage_size;
         pointer_type old_storage;
@@ -139,7 +139,7 @@ struct allocation : public pointer<system, T, _index_type>
     }
 
     // release the memory allocation
-    void free(void)
+    virtual void free(void)
     {
         if (storage)
         {

@@ -109,7 +109,7 @@ struct persistent_allocation : public allocation<system, T, _index_type>
         return *this;
     }
 
-    void resize(size_type count)
+    virtual void resize(size_type count) override
     {
         if (count <= storage_capacity)
         {
@@ -177,7 +177,7 @@ struct persistent_allocation : public allocation<system, T, _index_type>
     }
 
     // release the memory allocation
-    void free(void)
+    virtual void free(void) override
     {
         if (storage)
         {
