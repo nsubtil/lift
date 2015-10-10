@@ -293,8 +293,8 @@ template <>
 template <typename Key, typename Value>
 inline void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
                                         pointer<cuda, Value>& values,
-                                        pointer<cuda, Key>& temp_keys,
-                                        pointer<cuda, Value>& temp_values,
+                                        allocation<cuda, Key>& temp_keys,
+                                        allocation<cuda, Value>& temp_values,
                                         allocation<cuda, uint8>& temp_storage,
                                         int num_key_bits)
 {
@@ -392,8 +392,8 @@ template <>
 template <typename Key, typename Value, typename ReductionOp>
 inline size_t parallel<cuda>::reduce_by_key(pointer<cuda, Key>& keys,
                                             pointer<cuda, Value>& values,
-                                            pointer<cuda, Key>& output_keys,
-                                            pointer<cuda, Value>& output_values,
+                                            allocation<cuda, Key>& output_keys,
+                                            allocation<cuda, Value>& output_values,
                                             allocation<cuda, uint8>& temp_storage,
                                             ReductionOp reduction_op)
 {

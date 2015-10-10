@@ -113,8 +113,8 @@ struct parallel
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<system, Key>& keys,
                                    pointer<system, Value>& values,
-                                   pointer<system, Key>& temp_keys,
-                                   pointer<system, Value>& temp_values,
+                                   allocation<system, Key>& temp_keys,
+                                   allocation<system, Value>& temp_values,
                                    allocation<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
@@ -149,8 +149,8 @@ struct parallel
     template <typename Key, typename Value, typename ReductionOp>
     static inline size_t reduce_by_key(pointer<system, Key>& keys,
                                        pointer<system, Value>& values,
-                                       pointer<system, Key>& output_keys,
-                                       pointer<system, Value>& output_values,
+                                       allocation<system, Key>& output_keys,
+                                       allocation<system, Value>& output_values,
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 

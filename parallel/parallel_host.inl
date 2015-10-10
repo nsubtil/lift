@@ -152,8 +152,8 @@ template <>
 template <typename Key, typename Value>
 inline void parallel<host>::sort_by_key(pointer<host, Key>& keys,
                                         pointer<host, Value>& values,
-                                        pointer<host, Key>& temp_keys,
-                                        pointer<host, Value>& temp_values,
+                                        allocation<host, Key>& temp_keys,
+                                        allocation<host, Value>& temp_values,
                                         allocation<host, uint8>& temp_storage,
                                         int num_key_bits)
 {
@@ -224,16 +224,16 @@ template <>
 template <typename Key, typename Value, typename ReductionOp>
 inline size_t parallel<host>::reduce_by_key(pointer<host, Key>& keys,
                                             pointer<host, Value>& values,
-                                            pointer<host, Key>& output_keys,
-                                            pointer<host, Value>& output_values,
+                                            allocation<host, Key>& output_keys,
+                                            allocation<host, Value>& output_values,
                                             allocation<host, uint8>& temp_storage,
                                             ReductionOp reduction_op)
 {
-    return reduce_by_key(keys.begin(),
-                         keys.end(),
-                         values.begin(),
-                         output_keys.begin(),
-                         output_values.begin(),
+    return reduce_by_key(keys.t_begin(),
+                         keys.t_end(),
+                         values.t_begin(),
+                         output_keys.t_begin(),
+                         output_values.t_begin(),
                          temp_storage,
                          reduction_op);
 }
