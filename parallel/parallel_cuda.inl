@@ -155,40 +155,6 @@ inline size_t parallel<cuda>::copy_if(InputIterator first,
     return size_t(num_selected[0]);
 }
 
-template <>
-template <typename InputIterator, typename OutputIterator, typename Predicate>
-inline size_t parallel<cuda>::copy_if(InputIterator first,
-                                      size_t len,
-                                      OutputIterator result,
-                                      Predicate op,
-                                      vector<cuda, uint8>& temp_storage)
-{
-    scoped_allocation<cuda, int32> num_selected(1);
-
-    // determine amount of temp storage required
-    size_t temp_bytes = 0;
-    cub::DeviceSelect::If(nullptr,
-                          temp_bytes,
-                          first,
-                          result,
-                          num_selected.begin(),
-                          len,
-                          op);
-
-    // make sure we have enough temp storage
-    temp_storage.resize(temp_bytes);
-
-    cub::DeviceSelect::If(thrust::raw_pointer_cast(temp_storage.data()),
-                          temp_bytes,
-                          first,
-                          result,
-                          num_selected.begin(),
-                          len,
-                          op);
-
-    return size_t(num_selected[0]);
-}
-
 // xxxnsubtil: cub::DeviceSelect::Flagged seems problematic
 template <>
 template <typename InputIterator, typename FlagIterator, typename OutputIterator>
@@ -196,10 +162,10 @@ inline size_t parallel<cuda>::copy_flagged(InputIterator first,
                                            size_t len,
                                            OutputIterator result,
                                            FlagIterator flags,
-                                           vector<cuda, uint8>& temp_storage)
+                                           allocation<cuda, uint8>& temp_storage)
 {
 #if !WAR_CUB_COPY_FLAGGED
-    vector<cuda, size_t> num_selected(1);
+    scoped_allocation<cuda, size_t> num_selected(1);
 
     // determine amount of temp storage required
     size_t temp_bytes = 0;
@@ -261,35 +227,6 @@ inline auto parallel<cuda>::sum(InputIterator first,
 }
 
 template <>
-template <typename InputIterator>
-inline auto parallel<cuda>::sum(InputIterator first,
-                                size_t len,
-                                vector<cuda, uint8>& temp_storage)
-    -> typename std::iterator_traits<InputIterator>::value_type
-{
-    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
-
-    scoped_allocation<cuda, value_type> result(1);
-
-    size_t temp_bytes = 0;
-    cub::DeviceReduce::Sum(nullptr,
-                           temp_bytes,
-                           first,
-                           result.begin(),
-                           len);
-
-    temp_storage.resize(temp_bytes);
-
-    cub::DeviceReduce::Sum(thrust::raw_pointer_cast(temp_storage.data()),
-                           temp_bytes,
-                           first,
-                           result.begin(),
-                           len);
-
-    return value_type(result[0]);
-}
-
-template <>
 template <typename Key, typename Value>
 inline void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
                                         pointer<cuda, Value>& values,
@@ -337,56 +274,6 @@ inline void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
     }
 }
 
-template <>
-template <typename Key, typename Value>
-inline void parallel<cuda>::sort_by_key(vector<cuda, Key>& keys,
-                                        vector<cuda, Value>& values,
-                                        vector<cuda, Key>& temp_keys,
-                                        vector<cuda, Value>& temp_values,
-                                        vector<cuda, uint8>& temp_storage,
-                                        int num_key_bits)
-{
-    const size_t len = keys.size();
-    assert(keys.size() == values.size());
-
-    temp_keys.resize(len);
-    temp_values.resize(len);
-
-    cub::DoubleBuffer<Key> d_keys(thrust::raw_pointer_cast(keys.data()),
-                                  thrust::raw_pointer_cast(temp_keys.data()));
-    cub::DoubleBuffer<Value> d_values(thrust::raw_pointer_cast(values.data()),
-                                      thrust::raw_pointer_cast(temp_values.data()));
-
-    size_t temp_storage_bytes = 0;
-    cub::DeviceRadixSort::SortPairs(nullptr,
-                                    temp_storage_bytes,
-                                    d_keys,
-                                    d_values,
-                                    len,
-                                    0,
-                                    num_key_bits);
-
-    temp_storage.resize(temp_storage_bytes);
-
-    cub::DeviceRadixSort::SortPairs(thrust::raw_pointer_cast(temp_storage.data()),
-                                    temp_storage_bytes,
-                                    d_keys,
-                                    d_values,
-                                    len,
-                                    0,
-                                    num_key_bits);
-
-    if (thrust::raw_pointer_cast(keys.data()) != d_keys.Current())
-    {
-        cudaMemcpy(thrust::raw_pointer_cast(keys.data()), d_keys.Current(), sizeof(Key) * len, cudaMemcpyDeviceToDevice);
-    }
-
-    if (thrust::raw_pointer_cast(values.data()) != d_values.Current())
-    {
-        cudaMemcpy(thrust::raw_pointer_cast(values.data()), d_values.Current(), sizeof(Value) * len, cudaMemcpyDeviceToDevice);
-    }
-}
-
 // returns the size of the output key/value vectors
 template <>
 template <typename Key, typename Value, typename ReductionOp>
@@ -395,30 +282,6 @@ inline size_t parallel<cuda>::reduce_by_key(pointer<cuda, Key>& keys,
                                             allocation<cuda, Key>& output_keys,
                                             allocation<cuda, Value>& output_values,
                                             allocation<cuda, uint8>& temp_storage,
-                                            ReductionOp reduction_op)
-{
-    const size_t len = keys.size();
-    assert(keys.size() == values.size());
-
-    output_keys.resize(len);
-    output_values.resize(len);
-
-    return reduce_by_key(keys.begin(),
-                         keys.end(),
-                         values.begin(),
-                         output_keys.begin(),
-                         output_values.begin(),
-                         temp_storage,
-                         reduction_op);
-}
-
-template <>
-template <typename Key, typename Value, typename ReductionOp>
-inline size_t parallel<cuda>::reduce_by_key(vector<cuda, Key>& keys,
-                                            vector<cuda, Value>& values,
-                                            vector<cuda, Key>& output_keys,
-                                            vector<cuda, Value>& output_values,
-                                            vector<cuda, uint8>& temp_storage,
                                             ReductionOp reduction_op)
 {
     const size_t len = keys.size();
@@ -465,47 +328,6 @@ inline size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
     temp_storage.resize(temp_storage_bytes);
 
     cub::DeviceReduce::ReduceByKey(temp_storage.data(),
-                                   temp_storage_bytes,
-                                   keys_begin,
-                                   output_keys,
-                                   values_begin,
-                                   output_values,
-                                   num_segments.data(),
-                                   reduction_op,
-                                   len);
-
-    return num_segments[0];
-}
-
-template <>
-template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-inline size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
-                                            KeyIterator keys_end,
-                                            ValueIterator values_begin,
-                                            KeyIterator output_keys,
-                                            ValueIterator output_values,
-                                            vector<cuda, uint8>& temp_storage,
-                                            ReductionOp reduction_op)
-{
-    const size_t len = keys_end - keys_begin;
-
-    scoped_allocation<cuda, uint32> num_segments(1);
-
-    size_t temp_storage_bytes = 0;
-
-    cub::DeviceReduce::ReduceByKey(nullptr,
-                                   temp_storage_bytes,
-                                   keys_begin,
-                                   output_keys,
-                                   values_begin,
-                                   output_values,
-                                   num_segments.data(),
-                                   reduction_op,
-                                   len);
-
-    temp_storage.resize(temp_storage_bytes);
-
-    cub::DeviceReduce::ReduceByKey(thrust::raw_pointer_cast(temp_storage.data()),
                                    temp_storage_bytes,
                                    keys_begin,
                                    output_keys,

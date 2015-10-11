@@ -126,27 +126,4 @@ inline auto parallel<host>::sum(InputIterator first,
         return __lift_tbb_reduction::parallel_reduction(first, len, 0, sum_operator);
     }
 }
-
-template <>
-template <typename InputIterator>
-inline auto parallel<host>::sum(InputIterator first,
-                                size_t len,
-                                vector<host, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type
-{
-    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
-
-    auto sum_operator =
-            [] (const value_type& a, const value_type& b) -> value_type
-            {
-                return a + b;
-            };
-
-    if (len <= __lift_tbb_reduction::parameters<value_type>::sequential_threshold)
-    {
-        return __lift_tbb_reduction::sequential_reduction(first, len, 0, sum_operator);
-    } else {
-        return __lift_tbb_reduction::parallel_reduction(first, len, 0, sum_operator);
-    }
-}
-
 } // namespace lift

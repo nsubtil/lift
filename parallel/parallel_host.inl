@@ -120,21 +120,6 @@ inline size_t parallel<host>::copy_if(InputIterator first,
 }
 
 template <>
-template <typename InputIterator, typename OutputIterator, typename Predicate>
-inline size_t parallel<host>::copy_if(InputIterator first,
-                                      size_t len,
-                                      OutputIterator result,
-                                      Predicate op,
-                                      vector<host, uint8>& temp_storage)
-{
-    // use the fallback thrust version
-    OutputIterator out_last;
-    out_last = thrust::system::tbb::detail::copy_if(typename lift::backend_policy<host>::tag(),
-                                                    first, first + len, first, result, op);
-    return out_last - result;
-}
-
-template <>
 template <typename InputIterator, typename FlagIterator, typename OutputIterator>
 inline size_t parallel<host>::copy_flagged(InputIterator first,
                                            size_t len,
@@ -155,19 +140,6 @@ inline void parallel<host>::sort_by_key(pointer<host, Key>& keys,
                                         allocation<host, Key>& temp_keys,
                                         allocation<host, Value>& temp_values,
                                         allocation<host, uint8>& temp_storage,
-                                        int num_key_bits)
-{
-    thrust::sort_by_key(lift::backend_policy<host>::execution_policy(),
-                        keys.begin(), keys.end(), values.begin());
-}
-
-template <>
-template <typename Key, typename Value>
-inline void parallel<host>::sort_by_key(vector<host, Key>& keys,
-                                        vector<host, Value>& values,
-                                        vector<host, Key>& temp_keys,
-                                        vector<host, Value>& temp_values,
-                                        vector<host, uint8>& temp_storage,
                                         int num_key_bits)
 {
     thrust::sort_by_key(lift::backend_policy<host>::execution_policy(),
@@ -197,28 +169,6 @@ inline size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
     return out.first - output_keys;
 }
 
-template <>
-template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-inline size_t parallel<host>::reduce_by_key(KeyIterator keys_begin,
-                                            KeyIterator keys_end,
-                                            ValueIterator values_begin,
-                                            KeyIterator output_keys,
-                                            ValueIterator output_values,
-                                            vector<host, uint8>& temp_storage,
-                                            ReductionOp reduction_op)
-{
-    auto out = thrust::reduce_by_key(lift::backend_policy<host>::execution_policy(),
-                                     keys_begin,
-                                     keys_end,
-                                     values_begin,
-                                     output_keys,
-                                     output_values,
-                                     thrust::equal_to<typeof(*keys_begin)>(),
-                                     reduction_op);
-
-    return out.first - output_keys;
-}
-
 // returns the size of the output key/value vectors
 template <>
 template <typename Key, typename Value, typename ReductionOp>
@@ -234,24 +184,6 @@ inline size_t parallel<host>::reduce_by_key(pointer<host, Key>& keys,
                          values.t_begin(),
                          output_keys.t_begin(),
                          output_values.t_begin(),
-                         temp_storage,
-                         reduction_op);
-}
-
-template <>
-template <typename Key, typename Value, typename ReductionOp>
-inline size_t parallel<host>::reduce_by_key(vector<host, Key>& keys,
-                                            vector<host, Value>& values,
-                                            vector<host, Key>& output_keys,
-                                            vector<host, Value>& output_values,
-                                            vector<host, uint8>& temp_storage,
-                                            ReductionOp reduction_op)
-{
-    return reduce_by_key(keys.begin(),
-                         keys.end(),
-                         values.begin(),
-                         output_keys.begin(),
-                         output_values.begin(),
                          temp_storage,
                          reduction_op);
 }

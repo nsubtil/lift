@@ -32,7 +32,6 @@
 
 #include "types.h"
 
-#include "vector.h"
 #include "decorators.h"
 #include "backends.h"
 #include "memory.h"
@@ -79,13 +78,6 @@ struct parallel
                                  Predicate op,
                                  allocation<system, uint8>& temp_storage);
 
-    template <typename InputIterator, typename OutputIterator, typename Predicate>
-    static inline size_t copy_if(InputIterator first,
-                                 size_t len,
-                                 OutputIterator result,
-                                 Predicate op,
-                                 vector<system, uint8>& temp_storage);
-
     template <typename InputIterator, typename FlagIterator, typename OutputIterator>
     static inline size_t copy_flagged(InputIterator first,
                                       size_t len,
@@ -93,22 +85,10 @@ struct parallel
                                       FlagIterator flags,
                                       allocation<system, uint8>& temp_storage);
 
-    template <typename InputIterator, typename FlagIterator, typename OutputIterator>
-    static inline size_t copy_flagged(InputIterator first,
-                                      size_t len,
-                                      OutputIterator result,
-                                      FlagIterator flags,
-                                      vector<system, uint8>& temp_storage);
-
     template <typename InputIterator>
     static inline auto sum(InputIterator first,
                            size_t len,
                            allocation<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
-
-    template <typename InputIterator>
-    static inline auto sum(InputIterator first,
-                           size_t len,
-                           vector<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<system, Key>& keys,
@@ -116,14 +96,6 @@ struct parallel
                                    allocation<system, Key>& temp_keys,
                                    allocation<system, Value>& temp_values,
                                    allocation<system, uint8>& temp_storage,
-                                   int num_key_bits = sizeof(Key) * 8);
-
-    template <typename Key, typename Value>
-    static inline void sort_by_key(vector<system, Key>& keys,
-                                   vector<system, Value>& values,
-                                   vector<system, Key>& temp_keys,
-                                   vector<system, Value>& temp_values,
-                                   vector<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
     // returns the size of the output key/value
@@ -136,15 +108,6 @@ struct parallel
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
-    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-    static inline size_t reduce_by_key(KeyIterator keys_begin,
-                                       KeyIterator keys_end,
-                                       ValueIterator values_begin,
-                                       KeyIterator output_keys,
-                                       ValueIterator output_values,
-                                       vector<system, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
     // returns the size of the output key/value vectors
     template <typename Key, typename Value, typename ReductionOp>
     static inline size_t reduce_by_key(pointer<system, Key>& keys,
@@ -152,14 +115,6 @@ struct parallel
                                        allocation<system, Key>& output_keys,
                                        allocation<system, Value>& output_values,
                                        allocation<system, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
-    template <typename Key, typename Value, typename ReductionOp>
-    static inline size_t reduce_by_key(vector<system, Key>& keys,
-                                       vector<system, Value>& values,
-                                       vector<system, Key>& output_keys,
-                                       vector<system, Value>& output_values,
-                                       vector<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
     // computes a run length encoding
@@ -175,131 +130,6 @@ struct parallel
 
     static inline void check_errors(void);
 };
-
-#if 0
-template <>
-struct parallel<cuda>
-{
-    template <typename InputIterator, typename UnaryFunction>
-    static inline InputIterator for_each(InputIterator first,
-                                         InputIterator last,
-                                         UnaryFunction f,
-                                         int2 launch_parameters = { 0, 0 });
-
-    // shortcut to run for_each on a pointer
-    template <typename T, typename UnaryFunction>
-    static inline typename pointer<cuda, T>::iterator_type for_each(pointer<cuda, T>& data,
-                                                                    UnaryFunction f,
-                                                                    int2 launch_parameters = { 0, 0 });
-
-    // shortcut to run for_each on [range.x, range.y[
-    template <typename UnaryFunction>
-    static inline void for_each(uint2 range, UnaryFunction f, int2 launch_parameters = { 0, 0 });
-
-    // shortcut to run for_each on [0, end[
-    template <typename UnaryFunction>
-    static inline void for_each(uint32 end, UnaryFunction f, int2 launch_parameters = { 0, 0 });
-
-    template <typename InputIterator, typename OutputIterator, typename Predicate>
-    static inline void inclusive_scan(InputIterator first,
-                                      size_t len,
-                                      OutputIterator result,
-                                      Predicate op);
-
-    template <typename InputIterator, typename OutputIterator, typename Predicate>
-    static inline size_t copy_if(InputIterator first,
-                                 size_t len,
-                                 OutputIterator result,
-                                 Predicate op,
-                                 allocation<cuda, uint8>& temp_storage);
-
-    template <typename InputIterator, typename OutputIterator, typename Predicate>
-    static inline size_t copy_if(InputIterator first,
-                                 size_t len,
-                                 OutputIterator result,
-                                 Predicate op,
-                                 vector<cuda, uint8>& temp_storage);
-
-    template <typename InputIterator, typename FlagIterator, typename OutputIterator>
-    static inline size_t copy_flagged(InputIterator first,
-                                      size_t len,
-                                      OutputIterator result,
-                                      FlagIterator flags,
-                                      vector<cuda, uint8>& temp_storage);
-
-    template <typename InputIterator>
-    static inline auto sum(InputIterator first,
-                           size_t len,
-                           allocation<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
-
-    template <typename InputIterator>
-    static inline auto sum(InputIterator first,
-                           size_t len,
-                           vector<cuda, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
-
-    template <typename Key, typename Value>
-    static inline void sort_by_key(pointer<cuda, Key>& keys,
-                                   pointer<cuda, Value>& values,
-                                   pointer<cuda, Key>& temp_keys,
-                                   pointer<cuda, Value>& temp_values,
-                                   allocation<cuda, uint8>& temp_storage,
-                                   int num_key_bits = sizeof(Key) * 8);
-
-    template <typename Key, typename Value>
-    static inline void sort_by_key(vector<cuda, Key>& keys,
-                                   vector<cuda, Value>& values,
-                                   vector<cuda, Key>& temp_keys,
-                                   vector<cuda, Value>& temp_values,
-                                   vector<cuda, uint8>& temp_storage,
-                                   int num_key_bits = sizeof(Key) * 8);
-
-    // returns the size of the output key/value vectors
-    template <typename Key, typename Value, typename ReductionOp>
-    static inline size_t reduce_by_key(pointer<cuda, Key>& keys,
-                                       pointer<cuda, Value>& values,
-                                       pointer<cuda, Key>& output_keys,
-                                       pointer<cuda, Value>& output_values,
-                                       allocation<cuda, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
-    template <typename Key, typename Value, typename ReductionOp>
-    static inline size_t reduce_by_key(vector<cuda, Key>& keys,
-                                       vector<cuda, Value>& values,
-                                       vector<cuda, Key>& output_keys,
-                                       vector<cuda, Value>& output_values,
-                                       vector<cuda, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
-    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-    static inline size_t reduce_by_key(KeyIterator keys_begin,
-                                       KeyIterator keys_end,
-                                       ValueIterator values_begin,
-                                       KeyIterator output_keys,
-                                       ValueIterator output_values,
-                                       allocation<cuda, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
-    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
-    static inline size_t reduce_by_key(KeyIterator keys_begin,
-                                       KeyIterator keys_end,
-                                       ValueIterator values_begin,
-                                       KeyIterator output_keys,
-                                       ValueIterator output_values,
-                                       vector<cuda, uint8>& temp_storage,
-                                       ReductionOp reduction_op);
-
-    template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
-    static inline size_t run_length_encode(InputIterator keys_input,
-                                           size_t num_keys,
-                                           UniqueOutputIterator unique_keys_output,
-                                           LengthOutputIterator run_lengths_output,
-                                           allocation<cuda, uint8>& temp_storage);
-
-    static inline void synchronize(void);
-
-    static inline void check_errors(void);
-};
-#endif
 
 } // namespace lift
 
