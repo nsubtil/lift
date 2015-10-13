@@ -50,10 +50,6 @@ struct tagged_pointer_base
         system_tag = system,
     };
 
-    enum {
-        mutable_tag = 0,
-    };
-
     typedef T                                          value_type;
     typedef const T                                    const_value_type;
     typedef _index_type                                index_type;
@@ -270,6 +266,38 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
 
         return ret;
     }
+
+    // pointer arithmetic
+    // note that we don't do any bounds checking
+    LIFT_HOST_DEVICE pointer operator+(off_t offset) const
+    {
+        pointer ret;
+        ret.storage = base::storage + offset;
+        ret.storage_size = base::storage_size - offset;
+
+        return ret;
+    }
+
+    LIFT_HOST_DEVICE pointer operator-(off_t offset) const
+    {
+        pointer ret;
+        ret.storage = base::storage - offset;
+        ret.storage_size = base::storage_size + offset;
+
+        return ret;
+    }
+
+    // return a truncated pointer
+    LIFT_HOST_DEVICE pointer truncate(size_t new_size)
+    {
+        assert(new_size <= base::storage_size);
+
+        pointer ret;
+        ret.storage = base::storage;
+        ret.storage_size = new_size;
+
+        return ret;
+    }
 };
 
 template <typename T,
@@ -359,6 +387,38 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         }
 
         ret.storage_size = len;
+
+        return ret;
+    }
+
+    // pointer arithmetic
+    // note that we don't do any bounds checking
+    LIFT_HOST_DEVICE pointer operator+(off_t offset) const
+    {
+        pointer ret;
+        ret.storage = base::storage + offset;
+        ret.storage_size = base::storage_size - offset;
+
+        return ret;
+    }
+
+    LIFT_HOST_DEVICE pointer operator-(off_t offset) const
+    {
+        pointer ret;
+        ret.storage = base::storage - offset;
+        ret.storage_size = base::storage_size + offset;
+
+        return ret;
+    }
+
+    // return a truncated pointer
+    LIFT_HOST_DEVICE pointer truncate(size_t new_size)
+    {
+        assert(new_size <= base::storage_size);
+
+        pointer ret;
+        ret.storage = base::storage;
+        ret.storage_size = new_size;
 
         return ret;
     }
