@@ -1,6 +1,9 @@
 /*
+ * Lift
+ *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
  * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
+ * Copyright (c) 2015, Roche Molecular Systems Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,91 +31,57 @@
 
 #pragma once
 
-#include "types.h"
-#include <sys/time.h>
-
 namespace lift {
 
-template <target_system system>
-struct timer
+template <typename T, uint32 stride, typename IndexType = uint64>
+struct strided_iterator
 {
-    struct timeval start_event, stop_event;
+    typedef T*                                                          iterator;
+    typedef const T*                                                    const_iterator;
+    typedef typename thrust::iterator_traits<iterator>::value_type      value_type;
+    typedef typename thrust::iterator_traits<iterator>::reference       reference;
+    typedef typename thrust::iterator_traits<const_iterator>::reference const_reference;
+    typedef typename thrust::iterator_traits<iterator>::pointer         pointer;
+    typedef typename thrust::iterator_traits<const_iterator>::pointer   const_pointer;
+    typedef typename thrust::reverse_iterator<iterator>                 reverse_iterator;
+    typedef typename thrust::reverse_iterator<const_iterator>           const_reverse_iterator;
+    typedef typename thrust::iterator_traits<iterator>::difference_type difference_type;
+    typedef IndexType                                                   size_type;
 
-    void start(void)
-    {
-        gettimeofday(&start_event, NULL);
-    }
+    LIFT_HOST_DEVICE
+    strided_iterator() = default;
 
-    void stop(void)
-    {
-        gettimeofday(&stop_event, NULL);
-    }
-
-    float elapsed_time(void) const
-    {
-        struct timeval res;
-
-        timersub(&stop_event, &start_event, &res);
-        return res.tv_sec + res.tv_usec / 1000000.0;
-    }
-};
-
-template <>
-struct timer<cuda>
-{
-    cudaEvent_t start_event, stop_event;
-
-    timer()
-    {
-        cudaEventCreate(&start_event);
-        cudaEventCreate(&stop_event);
-    }
-
-    ~timer()
-    {
-        cudaEventDestroy(start_event);
-        cudaEventDestroy(stop_event);
-    }
-
-    void start(void)
-    {
-        cudaEventRecord(start_event);
-    }
-
-    void stop(void)
-    {
-        cudaEventRecord(stop_event);
-    }
-
-    float elapsed_time(void) const
-    {
-        float ms;
-
-        cudaEventElapsedTime(&ms, start_event, stop_event);
-        return ms / 1000.0;
-    }
-
-};
-
-struct time_series
-{
-    float elapsed_time;
-
-    time_series()
-        : elapsed_time(0.0)
+    LIFT_HOST_DEVICE
+    strided_iterator(T *base)
+        : m_vec(base)
     { }
 
-    time_series& operator+=(const time_series& other)
+    LIFT_HOST_DEVICE inline size_type offset(size_type elem) const
     {
-        elapsed_time += other.elapsed_time;
-        return *this;
+        return elem * stride;
     }
 
-    template <typename Timer>
-    void add(const Timer& timer)
+    LIFT_HOST_DEVICE reference operator[](size_type n)
     {
-        elapsed_time += timer.elapsed_time();
+        return m_vec[offset(n)];
     }
+
+    LIFT_HOST_DEVICE const_reference operator[](size_type n) const
+    {
+        return m_vec[offset(n)];
+    }
+
+    LIFT_HOST_DEVICE reference at(size_type n)
+    {
+        return m_vec[offset(n)];
+    }
+
+    LIFT_HOST_DEVICE const_reference at(size_type n) const
+    {
+        return m_vec[offset(n)];
+    }
+
+    T *m_vec;
 };
 
 } // namespace lift

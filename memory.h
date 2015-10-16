@@ -33,6 +33,7 @@
 
 #include "memory/pointer.h"
 #include "memory/allocation.h"
+#include "memory/persistent_allocation.h"
 #include "memory/scoped_allocation.h"
 #include "memory/scoped_free.h"
 #include "memory/ldg_wrapper.h"

@@ -267,6 +267,13 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
         return ret;
     }
 
+    // poke a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    void poke(size_type pos, const value_type value)
+    {
+        base::storage[pos] = value;
+    }
+
     // pointer arithmetic
     // note that we don't do any bounds checking
     LIFT_HOST_DEVICE pointer operator+(off_t offset) const
@@ -362,12 +369,13 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
     }
 #else
     // note: accessor methods on the host return a value, not a reference
-    LIFT_HOST value_type at(size_type pos) const
+    // also note: these have to be tagged host+device because they can be called from host+device code regardless
+    LIFT_HOST_DEVICE value_type at(size_type pos) const
     {
         return storage_read(pos);
     }
 
-    LIFT_HOST value_type operator[] (size_type pos) const
+    LIFT_HOST_DEVICE value_type operator[] (size_type pos) const
     {
         return storage_read(pos);
     }
@@ -389,6 +397,13 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         ret.storage_size = len;
 
         return ret;
+    }
+
+    // poke a value behind this memory pointer
+    // note: this is slow!
+    void poke(size_type pos, const value_type value)
+    {
+        cudaMemcpy(&base::storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
     }
 
     // pointer arithmetic

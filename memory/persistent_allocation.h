@@ -37,20 +37,21 @@
 
 #include "default_allocator.h"
 #include "pointer.h"
+#include "allocation.h"
 #include "thrust_wrappers.h"
 #include "type_assignment_checks.h"
 
 namespace lift {
 
-// tagged mutable memory pointer interface
-// exposes some of the std::vector interface, except for anything where the semantics differ from a plain pointer
+// same as allocation, except no reallocation happens when the size shrinks
+// implements reserve() and capacity()
 template <target_system system,
           typename T,
           typename _index_type = uint32,
           typename allocator = typename default_memory_allocator<system>::type>
-struct allocation : public pointer<system, T, _index_type>
+struct persistent_allocation : public allocation<system, T, _index_type>
 {
-    typedef pointer<system, T, _index_type> base;
+    typedef allocation<system, T, _index_type> base;
 
     typedef typename base::pointer_type pointer_type;
     typedef typename base::value_type   value_type;
@@ -59,68 +60,63 @@ struct allocation : public pointer<system, T, _index_type>
 
     typedef allocator                   allocator_type;
 
-    using base::base;
     using base::storage;
     using base::storage_size;
 
-    LIFT_HOST_DEVICE allocation()
-        : base()
+    LIFT_HOST_DEVICE persistent_allocation()
+        : base(), storage_capacity(0)
     { }
 
-    allocation(size_type count)
-        : base()
+    persistent_allocation(size_type count)
+        : base(), storage_capacity(0)
     {
         resize(count);
     }
 
-    // create allocation from pointer
-    // this should probably be disallowed and done differently
-    template <typename value_type>
-    allocation(const pointer<system, value_type, index_type>& other)
+    LIFT_HOST_DEVICE persistent_allocation(const persistent_allocation& other)
+        : base(), storage_capacity(0)
     {
         *this = other;
     }
 
     // initializer list semantics: make a copy of the contents
-    allocation(const std::initializer_list<value_type>& l)
-        : base()
+    persistent_allocation(const std::initializer_list<value_type>& l)
+        : base(), storage_capacity(0)
     {
-        resize(l.size());
-        index_type offset = 0;
-        for(auto i : l)
-        {
-            base::poke(offset, i);
-            offset++;
-        }
+        *this = l;
     }
 
-    // assign allocation from pointer
-    // this should probably be disallowed and done differently
-    template <typename value_type>
-    allocation& operator=(const pointer<system, value_type, index_type>& other)
+    LIFT_HOST_DEVICE persistent_allocation& operator=(const persistent_allocation& other)
     {
-        storage = other.data();
-        storage_size = other.size();
+        storage = other.storage;
+        storage_size = other.storage_size;
+        storage_capacity = other.storage_capacity;
 
         return *this;
     }
 
     // initializer list semantics: make a copy of the contents
-    allocation& operator=(const std::initializer_list<value_type>& l)
+    persistent_allocation& operator=(const std::initializer_list<value_type>& l)
     {
         resize(l.size());
         index_type offset = 0;
         for(auto i : l)
         {
-            base::poke(offset, i);
+            storage_write(offset, i);
             offset++;
         }
 
         return *this;
     }
 
-    virtual void resize(size_type count)
+    virtual void resize(size_type count) override
     {
+        if (count <= storage_capacity)
+        {
+            storage_size = count;
+            return;
+        }
+
         size_type old_storage_size;
         pointer_type old_storage;
 
@@ -131,15 +127,62 @@ struct allocation : public pointer<system, T, _index_type>
 
         if (old_storage != nullptr)
         {
-            device_memory_copy((void *)storage, old_storage, sizeof(value_type) * std::min(count, old_storage_size));
+            base::device_memory_copy((void *)storage, old_storage, sizeof(value_type) * std::min(count, old_storage_size));
             allocator_type().deallocate((pointer_type)old_storage);
         }
 
         storage_size = count;
+        storage_capacity = count;
+    }
+
+    void reserve(size_type count)
+    {
+        if (count <= storage_capacity)
+        {
+            return;
+        }
+
+        pointer_type old_storage = storage;
+
+        storage = (pointer_type) allocator_type().allocate(sizeof(value_type) * count);
+
+        if (old_storage != nullptr)
+        {
+            base::device_memory_copy((void *)storage, old_storage, sizeof(value_type) * storage_size);
+            allocator_type().deallocate((pointer_type)old_storage);
+        }
+
+        storage_capacity = count;
+    }
+
+    size_type capacity(void) const
+    {
+        return storage_capacity;
+    }
+
+    void shrink_to_fit(void)
+    {
+        if (storage_size == storage_capacity)
+        {
+            return;
+        }
+
+        size_type old_storage_capacity;
+        pointer_type old_storage;
+
+        old_storage = storage;
+        old_storage_capacity = storage_capacity;
+
+        storage = (pointer_type) allocator_type().allocate(sizeof(value_type) * storage_size);
+
+        base::device_memory_copy((void *)storage, old_storage, sizeof(value_type) * storage_size);
+        allocator_type().deallocate((pointer_type)old_storage);
+
+        storage_capacity = storage_size;
     }
 
     // release the memory allocation
-    virtual void free(void)
+    virtual void free(void) override
     {
         if (storage)
         {
@@ -148,51 +191,27 @@ struct allocation : public pointer<system, T, _index_type>
 
         storage = nullptr;
         storage_size = 0;
+        storage_capacity = 0;
     }
 
-    // cross-memory-space copy from another pointer
-    // note that this does not handle copies across different GPUs
-    template <typename other_allocation>
-    void copy(const other_allocation& other)
+    void push_back(const value_type& value)
     {
-        memory::check_value_type_assignment_compatible<value_type, typename other_allocation::value_type>();
-
-        resize(other.size());
-
-        if (system == cuda)
+        if (storage_capacity <= storage_size)
         {
-            // copying to GPU...
-            if (target_system(other_allocation::system_tag) == cuda)
-            {
-                // ... from the GPU
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToDevice);
-            } else {
-                // ... from the host
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyHostToDevice);
-            }
-        } else {
-            // copying to host...
-            if (target_system(other_allocation::system_tag) == cuda)
-            {
-                // ... from the GPU
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToHost);
-            } else {
-                // ... from the host
-                memcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size());
-            }
+            reserve((storage_capacity + 1) * 2);
         }
+
+        resize(storage_size + 1);
+        storage[storage_size - 1] = value_type(value);
+    }
+
+    void clear(void)
+    {
+        storage_size = 0;
     }
 
 protected:
-    void device_memory_copy(void *dst, const void *src, size_t size)
-    {
-        if (system == cuda)
-        {
-            cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice);
-        } else {
-            memcpy(dst, src, size);
-        }
-    }
+    size_type storage_capacity;
 };
 
 } // namespace lift

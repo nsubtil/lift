@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-#include "../types.h"
+#include "../../types.h"
 #include "launch_parameters.h"
 
 namespace lift {
