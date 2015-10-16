@@ -155,6 +155,11 @@ struct persistent_allocation : public allocation<system, T, _index_type>
         storage_capacity = count;
     }
 
+    size_type capacity(void) const
+    {
+        return storage_capacity;
+    }
+
     void shrink_to_fit(void)
     {
         if (storage_size == storage_capacity)
@@ -191,6 +196,11 @@ struct persistent_allocation : public allocation<system, T, _index_type>
 
     void push_back(const value_type& value)
     {
+        if (storage_capacity <= storage_size)
+        {
+            reserve((storage_capacity + 1) * 2);
+        }
+
         resize(storage_size + 1);
         storage[storage_size - 1] = value_type(value);
     }
@@ -201,7 +211,7 @@ struct persistent_allocation : public allocation<system, T, _index_type>
     }
 
 protected:
-    size_t storage_capacity;
+    size_type storage_capacity;
 };
 
 } // namespace lift
