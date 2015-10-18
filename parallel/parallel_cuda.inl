@@ -227,6 +227,31 @@ inline auto parallel<cuda>::sum(InputIterator first,
 }
 
 template <>
+template <typename Key>
+inline void parallel<cuda>::sort(allocation<cuda, Key>& keys,
+                                 allocation<cuda, Key>& temp_keys,
+                                 allocation<cuda, uint8>& temp_storage)
+{
+    const size_t len = keys.size();
+
+    temp_keys.resize(len);
+
+    cub::DoubleBuffer<Key> d_keys(keys.data(), temp_keys.data());
+
+    size_t temp_bytes = 0;
+    cub::DeviceRadixSort::SortKeys(nullptr,
+                                   temp_bytes,
+                                   d_keys,
+                                   len);
+
+    temp_storage.resize(temp_bytes);
+    cub::DeviceRadixSort::SortKeys(temp_storage.data(),
+                                   temp_bytes,
+                                   d_keys,
+                                   len);
+}
+
+template <>
 template <typename Key, typename Value>
 inline void parallel<cuda>::sort_by_key(pointer<cuda, Key>& keys,
                                         pointer<cuda, Value>& values,
