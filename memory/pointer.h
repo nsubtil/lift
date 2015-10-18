@@ -43,7 +43,7 @@ namespace lift {
 // tagged memory pointer
 template <target_system system,
           typename T,
-          typename _index_type = uint32>
+          typename _index_type>
 struct tagged_pointer_base
 {
     enum {
@@ -111,6 +111,46 @@ struct tagged_pointer_base
         }
 
         return *this;
+    }
+
+    LIFT_HOST_DEVICE const_reference_type at(size_type pos) const
+    {
+        return storage[pos];
+    }
+
+    LIFT_HOST_DEVICE reference_type at(size_type pos)
+    {
+        return storage[pos];
+    }
+
+    LIFT_HOST_DEVICE const_reference_type operator[] (size_type pos) const
+    {
+        return storage[pos];
+    }
+
+    LIFT_HOST_DEVICE reference_type operator[] (size_type pos)
+    {
+        return storage[pos];
+    }
+
+    LIFT_HOST_DEVICE const_reference_type front() const
+    {
+        return storage[0];
+    }
+
+    LIFT_HOST_DEVICE reference_type front()
+    {
+        return storage[0];
+    }
+
+    LIFT_HOST_DEVICE const_reference_type back() const
+    {
+        return &storage[storage_size - 1];
+    }
+
+    LIFT_HOST_DEVICE reference_type back()
+    {
+        return &storage[storage_size - 1];
     }
 
     LIFT_HOST_DEVICE const_iterator_type begin() const
@@ -210,47 +250,6 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
 
     using base::base;
 
-    // these will be parsed as part of a host/device function, but must never be called on the device
-    LIFT_HOST_DEVICE const_reference_type at(size_type pos) const
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_HOST_DEVICE reference_type at(size_type pos)
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_HOST_DEVICE const_reference_type operator[] (size_type pos) const
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_HOST_DEVICE reference_type operator[] (size_type pos)
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_HOST_DEVICE const_reference_type front() const
-    {
-        return base::storage[0];
-    }
-
-    LIFT_HOST_DEVICE reference_type front()
-    {
-        return base::storage[0];
-    }
-
-    LIFT_HOST_DEVICE const_reference_type back() const
-    {
-        return &base::storage[base::storage_size - 1];
-    }
-
-    LIFT_HOST_DEVICE reference_type back()
-    {
-        return &base::storage[base::storage_size - 1];
-    }
-
     // return a pointer to a memory range within this pointer
     LIFT_HOST_DEVICE pointer range(const size_type offset, size_type len = size_type(-1)) const
     {
@@ -265,13 +264,6 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
         ret.storage_size = len;
 
         return ret;
-    }
-
-    // poke a value behind this memory pointer
-    // note: this is slow for cuda pointers!
-    void poke(size_type pos, const value_type value)
-    {
-        base::storage[pos] = value;
     }
 
     // pointer arithmetic
@@ -302,6 +294,19 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
         ret.storage_size = new_size;
 
         return ret;
+    }
+
+    // cross-device value read
+    value_type operator() (const index_type idx)
+    {
+        return base::storage[idx];
+    }
+
+    // poke a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    void poke(size_type pos, const value_type value)
+    {
+        base::storage[pos] = value;
     }
 };
 
@@ -321,66 +326,6 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
 
     using base::base;
 
-#if LIFT_DEVICE_COMPILATION
-    // device accessors and iterators
-
-    // note: at() does not throw on the device
-    // bounds checking is not performed in GPU code
-    LIFT_DEVICE const_reference_type at(size_type pos) const
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_DEVICE reference_type at(size_type pos)
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_DEVICE const_reference_type operator[] (size_type pos) const
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_DEVICE reference_type operator[] (size_type pos)
-    {
-        return base::storage[pos];
-    }
-
-    LIFT_DEVICE const_reference_type front() const
-    {
-        return base::storage[0];
-    }
-
-    LIFT_DEVICE reference_type front()
-    {
-        return base::storage[0];
-    }
-
-    LIFT_DEVICE const_reference_type back() const
-    {
-        return base::storage[base::storage_size - 1];
-    }
-
-    LIFT_DEVICE reference_type back()
-    {
-        return base::storage[base::storage_size - 1];
-    }
-#else
-    // note: accessor methods on the host return a value, not a reference
-    // also note: these have to be tagged host+device because they can be called from host+device code regardless
-    LIFT_HOST_DEVICE value_type at(size_type pos) const
-    {
-        return storage_read(pos);
-    }
-
-    LIFT_HOST_DEVICE value_type operator[] (size_type pos) const
-    {
-        return storage_read(pos);
-    }
-
-    // we don't implement front() or back() on the host
-#endif
-
     // return a pointer to a memory range within this pointer
     LIFT_HOST_DEVICE pointer range(const size_type offset, size_type len = size_type(-1)) const
     {
@@ -395,13 +340,6 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         ret.storage_size = len;
 
         return ret;
-    }
-
-    // poke a value behind this memory pointer
-    // note: this is slow!
-    void poke(size_type pos, const value_type value)
-    {
-        cudaMemcpy(&base::storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
     }
 
     // pointer arithmetic
@@ -432,6 +370,19 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         ret.storage_size = new_size;
 
         return ret;
+    }
+
+    // cross-device value read
+    value_type operator() (const index_type idx)
+    {
+        return storage_read(idx);
+    }
+
+    // poke a value behind this memory pointer
+    // note: this is slow!
+    void poke(size_type pos, const value_type value)
+    {
+        cudaMemcpy(&base::storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
     }
 
 protected:
