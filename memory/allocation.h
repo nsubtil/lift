@@ -73,6 +73,12 @@ struct allocation : public pointer<system, T, _index_type>
         resize(count);
     }
 
+    LIFT_HOST_DEVICE allocation(const allocation& other)
+    {
+        storage = other.storage;
+        storage_size = other.storage_size;
+    }
+
     // create allocation from pointer
     // this should probably be disallowed and done differently
     template <typename value_type>

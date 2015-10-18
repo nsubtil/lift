@@ -74,25 +74,14 @@ struct persistent_allocation : public allocation<system, T, _index_type>
     }
 
     LIFT_HOST_DEVICE persistent_allocation(const persistent_allocation& other)
-        : base(), storage_capacity(0)
-    {
-        *this = other;
-    }
+        : base(other), storage_capacity(other.storage_capacity)
+    { }
 
     // initializer list semantics: make a copy of the contents
     persistent_allocation(const std::initializer_list<value_type>& l)
         : base(), storage_capacity(0)
     {
         *this = l;
-    }
-
-    LIFT_HOST_DEVICE persistent_allocation& operator=(const persistent_allocation& other)
-    {
-        storage = other.storage;
-        storage_size = other.storage_size;
-        storage_capacity = other.storage_capacity;
-
-        return *this;
     }
 
     // initializer list semantics: make a copy of the contents
