@@ -289,8 +289,6 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
     // return a truncated pointer
     LIFT_HOST_DEVICE pointer truncate(size_t new_size)
     {
-        assert(new_size <= base::storage_size);
-
         pointer ret;
         ret.storage = base::storage;
         ret.storage_size = new_size;
@@ -367,8 +365,6 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
     // return a truncated pointer
     LIFT_HOST_DEVICE pointer truncate(size_t new_size)
     {
-        assert(new_size <= base::storage_size);
-
         pointer ret;
         ret.storage = base::storage;
         ret.storage_size = new_size;
