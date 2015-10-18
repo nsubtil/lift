@@ -296,17 +296,24 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
         return ret;
     }
 
-    // cross-device value read
-    value_type operator() (const index_type idx)
+    // read a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    value_type peek(index_type pos)
     {
-        return base::storage[idx];
+        return base::storage[pos];
     }
 
     // poke a value behind this memory pointer
     // note: this is slow for cuda pointers!
-    void poke(size_type pos, const value_type value)
+    void poke(index_type pos, const value_type value)
     {
         base::storage[pos] = value;
+    }
+
+    // shortcut for peek, intended mostly for debug code
+    value_type operator() (const index_type idx)
+    {
+        return peek(idx);
     }
 };
 
@@ -372,21 +379,29 @@ struct pointer<cuda, T, _index_type> : public tagged_pointer_base<cuda, T, _inde
         return ret;
     }
 
-    // cross-device value read
-    value_type operator() (const index_type idx)
+    // read a value behind this memory pointer
+    // note: this is slow!
+    value_type peek(const size_type pos) const
     {
-        return storage_read(idx);
+        return storage_read(pos);
     }
 
     // poke a value behind this memory pointer
     // note: this is slow!
-    void poke(size_type pos, const value_type value)
+    void poke(const size_type pos, const value_type value)
     {
         cudaMemcpy(&base::storage[pos], &value, sizeof(value_type), cudaMemcpyHostToDevice);
     }
 
+    // shortcut for peek, intended mostly for debug code
+    // note: this is slow!
+    value_type operator() (const index_type idx)
+    {
+        return peek(idx);
+    }
+
 protected:
-    // this is slow
+    // this is slow!
     value_type storage_read(size_type pos) const
     {
         value_type v = value_type();
