@@ -35,7 +35,7 @@
 #include "../backends.h"
 #include "../decorators.h"
 
-#include "allocation.h"
+#include "persistent_allocation.h"
 
 namespace lift {
 
@@ -44,14 +44,10 @@ template <target_system system,
           typename T,
           typename index_type = uint32,
           typename allocator = typename default_memory_allocator<system>::type>
-struct scoped_allocation : public allocation<system, T, index_type, allocator>
+struct scoped_allocation : public persistent_allocation<system, T, index_type, allocator>
 {
-    typedef allocation<system, T, index_type, allocator> base;
+    typedef persistent_allocation<system, T, index_type, allocator> base;
     using base::base;
-
-    scoped_allocation()
-        : base()
-    { }
 
     ~scoped_allocation()
     {
