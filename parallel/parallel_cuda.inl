@@ -152,7 +152,7 @@ inline size_t parallel<cuda>::copy_if(InputIterator first,
                           len,
                           op);
 
-    return size_t(num_selected[0]);
+    return size_t(num_selected.peek(0));
 }
 
 // xxxnsubtil: cub::DeviceSelect::Flagged seems problematic
@@ -188,7 +188,7 @@ inline size_t parallel<cuda>::copy_flagged(InputIterator first,
             num_selected.begin(),
             len);
 
-    return size_t(num_selected[0]);
+    return size_t(num_selected.peek(0));
 #else
     OutputIterator out_last;
     out_last = thrust::copy_if(lift::backend_policy<cuda>::execution_policy(),
@@ -223,7 +223,7 @@ inline auto parallel<cuda>::sum(InputIterator first,
                            result.begin(),
                            len);
 
-    return value_type(result[0]);
+    return value_type(result.peek(0));
 }
 
 template <>
@@ -362,7 +362,7 @@ inline size_t parallel<cuda>::reduce_by_key(KeyIterator keys_begin,
                                    reduction_op,
                                    len);
 
-    return num_segments[0];
+    return num_segments.peek(0);
 }
 
 template <>
@@ -394,7 +394,7 @@ inline size_t parallel<cuda>::run_length_encode(InputIterator keys_input,
                                        result.data(),
                                        num_keys);
 
-    return size_t(result[0]);
+    return size_t(result.peek(0));
 }
 
 template <>
