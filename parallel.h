@@ -99,9 +99,9 @@ struct parallel
                                    int num_key_bits = sizeof(Key) * 8);
 
     template <typename Key>
-    static inline void sort(allocation<cuda, Key>& keys,
-                            allocation<cuda, Key>& temp_keys,
-                            allocation<cuda, uint8>& temp_storage);
+    static inline void sort(allocation<system, Key>& keys,
+                            allocation<system, Key>& temp_keys,
+                            allocation<system, uint8>& temp_storage);
 
     // returns the size of the output key/value
     template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
