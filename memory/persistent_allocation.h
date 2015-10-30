@@ -91,7 +91,7 @@ struct persistent_allocation : public allocation<system, T, _index_type>
         index_type offset = 0;
         for(auto i : l)
         {
-            storage_write(offset, i);
+            base::poke(offset, i);
             offset++;
         }
 
