@@ -32,7 +32,6 @@
 #include <sys/time.h>
 
 #include <stack>
-#include <tuple>
 
 namespace lift {
 
@@ -86,7 +85,12 @@ struct timer
 template <>
 struct timer<cuda>
 {
-    typedef std::tuple<cudaEvent_t, cudaEvent_t> sample_type;
+    typedef struct
+    {
+        cudaEvent_t start;
+        cudaEvent_t end;
+    } sample_type;
+
     std::stack<sample_type> retired_events;
 
     sample_type active_sample;
@@ -110,10 +114,10 @@ struct timer<cuda>
             abort();
         }
         
-        cudaEventCreate(&std::get<0>(active_sample));
-        cudaEventCreate(&std::get<1>(active_sample));
+        cudaEventCreate(&active_sample.start);
+        cudaEventCreate(&active_sample.end);
 
-        cudaEventRecord(std::get<0>(active_sample));
+        cudaEventRecord(active_sample.start);
 
         started = true;
     }
@@ -126,7 +130,7 @@ struct timer<cuda>
             abort();
         }
 
-        cudaEventRecord(std::get<1>(active_sample));
+        cudaEventRecord(active_sample.end);
 
         retired_events.push(active_sample);
         started = false;
@@ -142,12 +146,12 @@ private:
             sample_type sample = retired_events.top();
             retired_events.pop();
 
-            cudaEventSynchronize(std::get<1>(sample));
-            cudaEventElapsedTime(&ms, std::get<0>(sample), std::get<1>(sample));
+            cudaEventSynchronize(sample.end);
+            cudaEventElapsedTime(&ms, sample.start, sample.end);
             time_counter += ms / 1000.0;
 
-            cudaEventDestroy(std::get<0>(sample));
-            cudaEventDestroy(std::get<1>(sample));
+            cudaEventDestroy(sample.start);
+            cudaEventDestroy(sample.end);
         }
     }
 
