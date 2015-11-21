@@ -1,6 +1,7 @@
 project(lift)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-local")
+set(CMAKE_CXX_STANDARD 11)
 
 include(ExternalProject)
 
@@ -26,11 +27,11 @@ set(SYSTEM_LINK_LIBRARIES ${SYSTEM_LINK_LIBRARIES} ${tbb_LIB})
 
 # locate required packages
 # CUDA 7.0 is required to build
-find_package(CUDA 7.5 REQUIRED)
+find_package(CUDA 7.0 REQUIRED)
 # enable C++11 support
 list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
 # enable device lambda support
-list(APPEND CUDA_NVCC_FLAGS "--expt-extended-lambda")
+#list(APPEND CUDA_NVCC_FLAGS "--expt-extended-lambda")
 
 # add nvcc flags to generate code for all enabled architectures
 string(REPLACE "," ";" GPU_ARCHITECTURE ${GPU_ARCHITECTURE})
@@ -61,4 +62,8 @@ else()
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -lineinfo -g")
 endif()
 
+include("gcc.cmake")
+
+add_subdirectory(src)
+add_subdirectory(tests)
 

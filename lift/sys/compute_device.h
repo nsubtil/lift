@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
  * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
- * Copyright (c) 2015, Roche Molecular Systems, Inc.
+ * Copyright (c) 2015, Roche Molecular Systems Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,43 +31,19 @@
 
 #pragma once
 
-#include <tbb/tbb_stddef.h>
-#include <tbb/task_scheduler_init.h>
-
+#include <lift/backends.h>
+ 
 namespace lift {
 
-struct compute_device_host : public compute_device
+template <target_system>
+struct compute_device_info
+{ };
+
+struct compute_device
 {
-    const char *device_name;
-
-    compute_device_host()
-    {
-        int num_threads = tbb::task_scheduler_init::default_num_threads();
-
-        char str[256];
-        snprintf(str, sizeof(str), "CPU (%d threads)", num_threads);
-
-        device_name = strdup(str);
-    }
-
-    virtual target_system get_system(void) override
-    {
-        return host;
-    }
-
-    virtual void enable(void) override
-    { }
-
-    virtual const char *get_name(void) override
-    {
-        return device_name;
-    }
-
-    static bool runtime_initialize(std::string& ret)
-    {
-        ret = std::string("Intel TBB");
-        return true;
-    }
+    virtual target_system get_system(void) = 0;
+    virtual void enable(void) = 0;
+    virtual const char *get_name(void) = 0;
 };
 
 } // namespace lift
