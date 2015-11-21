@@ -146,6 +146,16 @@ inline void parallel<host>::sort_by_key(pointer<host, Key>& keys,
                         keys.begin(), keys.end(), values.begin());
 }
 
+template <>
+template <typename Key>
+inline void parallel<host>::sort(allocation<host, Key>& keys,
+                                 allocation<host, Key>& temp_keys,
+                                 allocation<host, uint8>& temp_storage)
+{
+    thrust::sort(lift::backend_policy<host>::execution_policy(),
+                 keys.begin(), keys.end());
+}
+
 // returns the size of the output key/value
 template <>
 template <typename KeyIterator, typename ValueIterator, typename ReductionOp>

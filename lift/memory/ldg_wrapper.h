@@ -93,6 +93,52 @@ struct ldg_pointer : public pointer<system, value_type, index_type>
     {
         return __ldg_loader<system, value_type>::load(&base::storage[base::storage_size - 1]);
     }
+
+    // return a pointer to a memory range within this pointer
+    LIFT_HOST_DEVICE ldg_pointer range(const size_type offset, size_type len = size_type(-1)) const
+    {
+        ldg_pointer ret;
+        ret.storage = base::storage + offset;
+
+        if (len == size_type(-1))
+        {
+            len = base::storage_size - offset;
+        }
+
+        ret.storage_size = len;
+
+        return ret;
+    }
+
+    // pointer arithmetic
+    // note that we don't do any bounds checking
+    LIFT_HOST_DEVICE ldg_pointer operator+(off_t offset) const
+    {
+        ldg_pointer ret;
+        ret.storage = base::storage + offset;
+        ret.storage_size = base::storage_size - offset;
+
+        return ret;
+    }
+
+    LIFT_HOST_DEVICE ldg_pointer operator-(off_t offset) const
+    {
+        ldg_pointer ret;
+        ret.storage = base::storage - offset;
+        ret.storage_size = base::storage_size + offset;
+
+        return ret;
+    }
+
+    // return a truncated pointer
+    LIFT_HOST_DEVICE ldg_pointer truncate(size_t new_size)
+    {
+        ldg_pointer ret;
+        ret.storage = base::storage;
+        ret.storage_size = new_size;
+
+        return ret;
+    }
 };
 
 template <target_system system, typename T, typename I>

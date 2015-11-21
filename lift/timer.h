@@ -31,67 +31,136 @@
 #include "types.h"
 #include <sys/time.h>
 
+#include <stack>
+
 namespace lift {
 
 template <target_system system>
 struct timer
 {
-    struct timeval start_event, stop_event;
+    struct timeval start_event;
+    bool started;
+    float time_counter;
+
+    timer()
+        : started(false), time_counter(0.0)
+    { }
 
     void start(void)
     {
+        if (started)
+        {
+            fprintf(stderr, "ERROR: inconsistent timer state");
+            abort();
+        }
+
         gettimeofday(&start_event, NULL);
+        started = true;
     }
 
     void stop(void)
     {
-        gettimeofday(&stop_event, NULL);
-    }
+        if (!started)
+        {
+            fprintf(stderr, "ERROR: inconsistent timer state");
+            abort();
+        }
 
-    float elapsed_time(void) const
-    {
-        struct timeval res;
+        struct timeval stop_event, res;
+
+        gettimeofday(&stop_event, NULL);
 
         timersub(&stop_event, &start_event, &res);
-        return res.tv_sec + res.tv_usec / 1000000.0;
+        time_counter += res.tv_sec + res.tv_usec / 1000000.0;
+
+        started = false;
+    }
+
+    float elapsed_time(void)
+    {
+        return time_counter;
     }
 };
 
 template <>
 struct timer<cuda>
 {
-    cudaEvent_t start_event, stop_event;
+    typedef struct
+    {
+        cudaEvent_t start;
+        cudaEvent_t end;
+    } sample_type;
+
+    std::stack<sample_type> retired_events;
+
+    sample_type active_sample;
+    bool started;
+    float time_counter;
 
     timer()
-    {
-        cudaEventCreate(&start_event);
-        cudaEventCreate(&stop_event);
-    }
+        : started(false), time_counter(0.0)
+    { }
 
     ~timer()
     {
-        cudaEventDestroy(start_event);
-        cudaEventDestroy(stop_event);
+        flush();
     }
 
     void start(void)
     {
-        cudaEventRecord(start_event);
+        if (started)
+        {
+            fprintf(stderr, "ERROR: inconsistent timer state");
+            abort();
+        }
+        
+        cudaEventCreate(&active_sample.start);
+        cudaEventCreate(&active_sample.end);
+
+        cudaEventRecord(active_sample.start);
+
+        started = true;
     }
 
     void stop(void)
     {
-        cudaEventRecord(stop_event);
+        if (!started)
+        {
+            fprintf(stderr, "ERROR: inconsistent timer state");
+            abort();
+        }
+
+        cudaEventRecord(active_sample.end);
+
+        retired_events.push(active_sample);
+        started = false;
     }
 
-    float elapsed_time(void) const
+private:
+    void flush(void)
     {
-        float ms;
+        while(!retired_events.empty())
+        {
+            float ms;
 
-        cudaEventElapsedTime(&ms, start_event, stop_event);
-        return ms / 1000.0;
+            sample_type sample = retired_events.top();
+            retired_events.pop();
+
+            cudaEventSynchronize(sample.end);
+            cudaEventElapsedTime(&ms, sample.start, sample.end);
+            time_counter += ms / 1000.0;
+
+            cudaEventDestroy(sample.start);
+            cudaEventDestroy(sample.end);
+        }
     }
 
+public:
+    float elapsed_time(void)
+    {
+        flush();
+        return time_counter;
+    }
 };
 
 struct time_series
@@ -109,7 +178,7 @@ struct time_series
     }
 
     template <typename Timer>
-    void add(const Timer& timer)
+    void add(Timer& timer)
     {
         elapsed_time += timer.elapsed_time();
     }
