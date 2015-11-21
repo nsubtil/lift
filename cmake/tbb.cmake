@@ -29,4 +29,4 @@ ExternalProject_Add(tbb
     )
 
 include_directories(${tbb_SRC}/include)
-set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a)
+set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS})
