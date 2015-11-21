@@ -1,3 +1,6 @@
+# locate required libs
+find_package(Threads)
+
 # build tbb
 set(tbb_PREFIX ${CMAKE_BINARY_DIR}/contrib/tbb-prefix)
 set(tbb_INSTALL ${CMAKE_BINARY_DIR}/contrib/tbb-install)
@@ -29,4 +32,4 @@ ExternalProject_Add(tbb
     )
 
 include_directories(${tbb_SRC}/include)
-set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS})
+set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
