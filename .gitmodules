@@ -1,0 +1,9 @@
+[submodule "contrib/cub"]
+	path = contrib/cub
+	url = https://github.com/nsubtil/cub
+[submodule "contrib/tbb"]
+	path = contrib/tbb
+	url = https://github.com/nsubtil/tbb
+[submodule "contrib/thrust"]
+	path = contrib/thrust
+	url = https://github.com/thrust/thrust

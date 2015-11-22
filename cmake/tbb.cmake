@@ -1,8 +1,12 @@
+# locate required libs
+find_package(Threads)
+
 # build tbb
 set(tbb_PREFIX ${CMAKE_BINARY_DIR}/contrib/tbb-prefix)
 set(tbb_INSTALL ${CMAKE_BINARY_DIR}/contrib/tbb-install)
 
-set(tbb_SRC ${tbb_PREFIX}/src/tbb)
+set(tbb_BUILD_DIR ${tbb_PREFIX}/src/tbb)
+set(tbb_SRC ${CMAKE_CURRENT_SOURCE_DIR}/contrib/tbb)
 
 if (FORCE_TSX_OFF)
   set(TBB_PATCH_COMMAND patch -p1 -t -N < ${PROJECT_SOURCE_DIR}/contrib/tbb-disable-tsx.patch)
@@ -18,15 +22,14 @@ endif()
 
 ExternalProject_Add(tbb
     PREFIX ${tbb_PREFIX}
-    GIT_REPOSITORY ${tbb_repo}
-    GIT_TAG "4.3-20150611"
+    URL ${tbb_SRC}
     BUILD_IN_SOURCE 1
     PATCH_COMMAND ${TBB_PATCH_COMMAND}
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ${MAKE}
-    INSTALL_COMMAND ${CMAKE_CURRENT_LIST_DIR}/tbb-install.sh ${tbb_SRC} ${tbb_INSTALL}
+    INSTALL_COMMAND ${CMAKE_CURRENT_LIST_DIR}/tbb-install.sh ${tbb_BUILD_DIR} ${tbb_INSTALL}
     LOG_DOWNLOAD 1
     )
 
-include_directories(${tbb_INSTALL}/include)
-set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a)
+list(APPEND INCLUDE_DIRS ${tbb_SRC}/include)
+list(APPEND LINK_LIBS ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})

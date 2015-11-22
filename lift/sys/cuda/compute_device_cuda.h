@@ -131,6 +131,10 @@ struct cuda_device_config
     }
 };
 
+template <>
+struct compute_device_info<cuda> : public cuda_device_config
+{ };
+
 struct compute_device_cuda : public compute_device
 {
     cuda_device_config config;
