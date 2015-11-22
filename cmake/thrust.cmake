@@ -20,5 +20,5 @@
 #set(thrust_INCLUDE ${thrust_PREFIX}/src/thrust)
 #include_directories(${thrust_INCLUDE})
 
-include_directories(${CMAKE_SOURCE_DIR}/contrib/thrust)
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/contrib/thrust)
     

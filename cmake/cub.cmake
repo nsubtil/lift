@@ -17,5 +17,4 @@
 #    LOG_DOWNLOAD 0
 #    )
 
-include_directories(${CMAKE_SOURCE_DIR}/contrib/cub)
-
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cub)

@@ -6,7 +6,7 @@ set(tbb_PREFIX ${CMAKE_BINARY_DIR}/contrib/tbb-prefix)
 set(tbb_INSTALL ${CMAKE_BINARY_DIR}/contrib/tbb-install)
 
 set(tbb_BUILD_DIR ${tbb_PREFIX}/src/tbb)
-set(tbb_SRC ${CMAKE_SOURCE_DIR}/contrib/tbb)
+set(tbb_SRC ${CMAKE_CURRENT_SOURCE_DIR}/contrib/tbb)
 
 if (FORCE_TSX_OFF)
   set(TBB_PATCH_COMMAND patch -p1 -t -N < ${PROJECT_SOURCE_DIR}/contrib/tbb-disable-tsx.patch)
@@ -31,5 +31,5 @@ ExternalProject_Add(tbb
     LOG_DOWNLOAD 1
     )
 
-include_directories(${tbb_SRC}/include)
-set(tbb_LIB ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+list(APPEND INCLUDE_DIRS ${tbb_SRC}/include)
+list(APPEND LINK_LIBS ${tbb_INSTALL}/lib/libtbb.a ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})

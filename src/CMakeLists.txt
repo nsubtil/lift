@@ -3,4 +3,3 @@ set(lift_lib_sources
 
 cuda_add_library(lift ${lift_lib_sources})
 add_dependencies(lift tbb)
-

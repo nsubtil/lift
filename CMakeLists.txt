@@ -1,6 +1,6 @@
 project(lift)
 cmake_minimum_required(VERSION 3.2)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-local")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-local")
 set(CMAKE_CXX_STANDARD 11)
 
 include(ExternalProject)
@@ -9,11 +9,14 @@ option(USE_EXTERNAL_THRUST
        "Build using Thrust from Github (do not use the CUDA toolkit version)"
        ON)
 
-if (DEFINED ENV{LIFT_GPU_ARCHITECTURE})
-    set(GPU_ARCHITECTURE $ENV{LIFT_GPU_ARCHITECTURE} CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
-else ()
-    # allow setting the list of GPU architectures on the command line
-    set(GPU_ARCHITECTURE "sm_35,sm_52" CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
+# parent project might define GPU architecture
+if (NOT DEFINED GPU_ARCHITECTURE)
+    if (DEFINED ENV{LIFT_GPU_ARCHITECTURE})
+        set(GPU_ARCHITECTURE $ENV{LIFT_GPU_ARCHITECTURE} CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
+    else ()
+        # allow setting the list of GPU architectures on the command line
+        set(GPU_ARCHITECTURE "sm_35,sm_52" CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
+    endif ()
 endif ()
 
 # build dependencies
@@ -23,7 +26,6 @@ endif()
 
 include("cmake/cub.cmake")
 include("cmake/tbb.cmake")
-set(SYSTEM_LINK_LIBRARIES ${SYSTEM_LINK_LIBRARIES} ${tbb_LIB})
 
 # locate required packages
 # CUDA 7.0 is required to build
@@ -42,17 +44,12 @@ foreach(ARCH IN LISTS GPU_ARCHITECTURE)
         --generate-code arch=${COMPUTE},code=${ARCH})
 endforeach(ARCH)
 
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if (USE_EXTERNAL_THRUST)
     # inject our Thrust include path to override the CUDA toolkit include path
     # (this is a bit of a hack)
     set(CUDA_INCLUDE_DIRS ${thrust_INCLUDE} -I${CUDA_INCLUDE_DIRS})
-endif()
-
-find_library(RT_LIBRARY rt)
-if (RT_LIBRARY)
-    set(SYSTEM_LINK_LIBRARIES ${SYSTEM_LINK_LIBRARIES} ${RT_LIBRARY})
 endif()
 
 # set cuda debug flags
@@ -64,6 +61,14 @@ endif()
 
 include("gcc.cmake")
 
+include_directories(${INCLUDE_DIRS})
+
 add_subdirectory(src)
 add_subdirectory(tests)
 
+get_directory_property(has_parent_scope PARENT_DIRECTORY)
+if (has_parent_scope)
+    # propagate link and include flags to parent scope
+    set(LIFT_LINK_LIBRARIES lift ${LINK_LIBS} PARENT_SCOPE)
+    set(LIFT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIRS} PARENT_SCOPE)
+endif()
