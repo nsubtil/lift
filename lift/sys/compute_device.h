@@ -35,10 +35,6 @@
  
 namespace lift {
 
-template <target_system>
-struct compute_device_info
-{ };
-
 struct compute_device
 {
     virtual target_system get_system(void) = 0;

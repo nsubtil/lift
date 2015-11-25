@@ -33,9 +33,6 @@
 
 #include <vector>
 
-#include <tbb/tbb_stddef.h>
-#include <tbb/task_scheduler_init.h>
-
 #include <lift/types.h>
 #include <lift/sys/compute_device.h>
 
@@ -60,25 +57,40 @@ struct cpu_cache
 
 struct cpu_config
 {
-    std::string name;
-    uint32 vector_extensions;
-    std::vector<cpu_cache> caches;
+   std::string name;
+   uint32 vector_extensions;
+   std::vector<cpu_cache> caches;
+
+    // number of concurrent threads that can run on the CPU
+    // note that this value may be affected by the affinity mask for the process
+    uint32 num_threads;
+
+    cpu_config()
+        : name(),
+          vector_extensions(0),
+          caches(),
+          num_threads(0)
+    { }
 };
 
 namespace __internal {
 // the appropriate arch-specific implementation is chosen at compile-time by the build system
-extern bool identify_host_cpu(cpu_config& ret);
+extern cpu_config identify_host_cpu(void);
 } // namespace __internal
 
 struct compute_device_host : public compute_device
 {
-    cpu_config config;
-    int num_threads;
+    const cpu_config config;
 
-    compute_device_host()
+    // this value is configurable; it is meant to hold the number of threads
+    // that are effectively enabled for this compute device
+    const uint32 num_threads;
+
+    compute_device_host(uint32 num_threads = uint32(-1))
+        : num_threads(num_threads), config(__internal::identify_host_cpu())
     {
-        __internal::identify_host_cpu(config);
-        num_threads = tbb::task_scheduler_init::default_num_threads();
+        if (num_threads == uint32(-1))
+            num_threads = config.num_threads;
     }
 
     virtual target_system get_system(void) override
@@ -98,6 +110,12 @@ struct compute_device_host : public compute_device
     {
         ret = std::string("Intel TBB");
         return true;
+    }
+
+    static uint32 available_threads()
+    {
+        cpu_config config = __internal::identify_host_cpu();
+        return config.num_threads;
     }
 };
 

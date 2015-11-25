@@ -29,6 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <tbb/task_scheduler_init.h>
+
 #include <lift/types.h>
 #include <lift/sys/host/compute_device_host.h>
 #include <lift/sys/host/x86_64/vector_flags.h>
@@ -78,7 +80,7 @@ static void identify_vector_extensions(cpu_config& ret)
 {
     ret.vector_extensions = 0;
 
-    cpuid_regs regs;    
+    cpuid_regs regs;
     cpuid(regs, 1);
 
 #define XL_BIT(register, cpuid_bit, lift_bit) \
@@ -237,7 +239,7 @@ static void scan_leaf4_cache_info(cpu_config& ret)
 
             case 3:
                 cache_type = cpu_cache::unified;
-                break;    
+                break;
         }
 
         unsigned int level = ((regs.eax >> 5) & 0x3);
@@ -332,9 +334,12 @@ static void get_cpu_brand_string(cpu_config& ret)
 
 namespace __internal {
 
-bool identify_host_cpu(cpu_config& ret)
+cpu_config identify_host_cpu(void)
 {
+    cpu_config ret;
     unsigned int max_level;
+
+    ret.num_threads = tbb::task_scheduler_init::default_num_threads();
 
     // get the maximum CPUID level supported
     max_level = x86_64::cpuid_max();
@@ -342,14 +347,14 @@ bool identify_host_cpu(cpu_config& ret)
     if (max_level < 1)
     {
         // should never happen
-        return false;
+        return ret;
     }
 
     x86_64::identify_vector_extensions(ret);
     x86_64::identify_caches(ret);
     x86_64::get_cpu_brand_string(ret);
 
-    return true;
+    return ret;
 }
 
 } // namespace __internal
