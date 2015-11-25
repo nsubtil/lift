@@ -31,10 +31,6 @@
 
 #pragma once
 
-#ifndef ENABLE_TBB_BACKEND
-#define ENABLE_TBB_BACKEND 1
-#endif
-
 namespace lift {
 
 enum target_system
@@ -53,10 +49,7 @@ enum target_system
 
 #endif
 
-#if ENABLE_TBB_BACKEND
 #include <thrust/system/tbb/vector.h>
-#endif
-
 #include <thrust/execution_policy.h>
 
 namespace lift {
@@ -77,7 +70,6 @@ struct backend_policy<cuda>
     }
 };
 
-#if ENABLE_TBB_BACKEND
 template <>
 struct backend_policy<host>
 {
@@ -88,7 +80,6 @@ struct backend_policy<host>
         return thrust::tbb::par;
     }
 };
-#endif
 
 } // namespace lift
 
@@ -97,13 +88,8 @@ struct backend_policy<host>
 #define __FUNC_CUDA(fun) auto *ptr_cuda = fun<lift::cuda>;
 #define __METHOD_CUDA(base, method) auto ptr_cuda = &base<lift::cuda>::method;
 
-#if ENABLE_TBB_BACKEND
 #define __FUNC_TBB(fun) auto *ptr_TBB= fun<lift::host>;
 #define __METHOD_TBB(base, method) auto ptr_TBB = &base<lift::host>::method;
-#else
-#define __FUNC_TBB(fun) ;
-#define __METHOD_TBB(base, method) ;
-#endif
 
 // free function instantiation
 #define INSTANTIATE(fun) \
