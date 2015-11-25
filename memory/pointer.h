@@ -298,7 +298,7 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
 
     // read a value behind this memory pointer
     // note: this is slow for cuda pointers!
-    value_type peek(index_type pos)
+    value_type peek(index_type pos) const
     {
         return base::storage[pos];
     }
@@ -311,7 +311,7 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
     }
 
     // shortcut for peek, intended mostly for debug code
-    value_type operator() (const index_type idx)
+    value_type operator() (const index_type idx) const
     {
         return peek(idx);
     }
