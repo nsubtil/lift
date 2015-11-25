@@ -31,6 +31,11 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
+
+#include <lift/sys/compute_device.h>
+
 namespace lift {
 
 struct cuda_device_config
@@ -38,106 +43,29 @@ struct cuda_device_config
     int device;
     char *device_name;
     uint64 total_memory;
-    uint32 compute_capability_major;
-    uint32 compute_capability_minor;
+    int compute_capability_major;
+    int compute_capability_minor;
 
     cuda_device_config()
         : device(-1),
           device_name(nullptr),
           total_memory(uint64(-1)),
-          compute_capability_major(uint32(-1)),
-          compute_capability_minor(uint32(-1))
+          compute_capability_major(-1),
+          compute_capability_minor(-1)
     { }
 
-    cuda_device_config(int dev)
-    {
-        cudaDeviceProp prop;
-        cudaGetDeviceProperties(&prop, dev);
-
-        // compose our device name
-        char str[1024];
-        snprintf(str, sizeof(str), "%s (%lu MB, CUDA device %d)",
-                 prop.name, prop.totalGlobalMem / (1024 * 1024), dev);
-
-        device = dev;
-        device_name = strdup(str);
-        total_memory = prop.totalGlobalMem;
-        compute_capability_major = prop.major;
-        compute_capability_minor = prop.minor;
-    }
+    cuda_device_config(int dev);
 
     // enumerate the GPUs that match a set of minimum requirements
     // returns false if an error occurs
     static bool enumerate_gpus(std::vector<cuda_device_config>& devices,
                                std::string& error,
-                               const cuda_device_config& requirements = cuda_device_config())
-    {
-        cudaError_t err;
-        int gpu_count;
-
-        err = cudaGetDeviceCount(&gpu_count);
-        if (err != cudaSuccess)
-        {
-            error = std::string(cudaGetErrorString(err));
-            return false;
-        }
-
-        for(int dev = 0; dev < gpu_count; dev++)
-        {
-            cudaDeviceProp prop;
-            cudaGetDeviceProperties(&prop, dev);
-
-            // match on the config requirements
-            if (requirements.device != -1 &&
-                dev != requirements.device)
-            {
-                continue;
-            }
-
-            if (requirements.device_name != nullptr &&
-                strcmp(requirements.device_name, prop.name))
-            {
-                continue;
-            }
-
-            // the following are considered a minimum requirement and not an exact match
-            if (requirements.total_memory != uint64(-1) &&
-                prop.totalGlobalMem < requirements.total_memory)
-            {
-                continue;
-            }
-
-            if (requirements.compute_capability_major != uint32(-1))
-            {
-                if (prop.major < requirements.compute_capability_major)
-                {
-                    continue;
-                }
-
-                if (prop.major == requirements.compute_capability_major)
-                {
-                    if (requirements.compute_capability_minor != uint32(-1) &&
-                        prop.minor < requirements.compute_capability_minor)
-                    {
-                        continue;
-                    }
-                }
-            }
-
-            devices.push_back(cuda_device_config(dev));
-        }
-
-        return true;
-    }
+                               const cuda_device_config& requirements = cuda_device_config());
 };
-
-template <>
-struct compute_device_info<cuda> : public cuda_device_config
-{ };
 
 struct compute_device_cuda : public compute_device
 {
-    cuda_device_config config;
+    const cuda_device_config config;
 
     compute_device_cuda(const cuda_device_config& config)
         : config(config)
@@ -158,33 +86,7 @@ struct compute_device_cuda : public compute_device
         return config.device_name;
     }
 
-    static bool runtime_initialize(std::string& ret)
-    {
-        cudaError_t err;
-        int runtime_version;
-
-        // force explicit runtime initialization
-        err = cudaFree(0);
-        if (err != cudaSuccess)
-        {
-            ret = std::string(cudaGetErrorString(err));
-            return false;
-        }
-
-        err = cudaRuntimeGetVersion(&runtime_version);
-        if (err != cudaSuccess)
-        {
-            ret = std::string(cudaGetErrorString(err));
-            return false;
-        }
-
-        char buf[256];
-        snprintf(buf, sizeof(buf),
-                 "NVIDIA CUDA %d.%d", runtime_version / 1000, runtime_version % 100 / 10);
-
-        ret = std::string(buf);
-        return true;
-    }
+    static bool runtime_initialize(std::string& ret);
 };
 
 } // namespace lift
