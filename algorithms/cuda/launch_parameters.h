@@ -38,17 +38,24 @@ namespace lift {
 template <class T>
 int2 launch_parameters(T kernel, size_t elements, int dynamic_smem_size = 0)
 {
-    int block_size, grid_size;
+    int block_size;     // block size returned by launch configurator
+    int min_grid_size;  // minimum grid required for full occupancy
+    int grid_size;      // required grid size based on input size (elements)
+
     cudaError_t err;
 
-    err = cudaOccupancyMaxPotentialBlockSize(&grid_size, &block_size,
-                                             kernel, dynamic_smem_size, elements);
+    // figure out the largest potential block size for the function
+    err = cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size,
+                                             kernel, dynamic_smem_size, 0);
 
     if (err != cudaSuccess)
     {
         fprintf(stderr, "ERROR: cudaOccupancyMaxPotentialBlockSize failed (%d)\n", err);
         abort();
     }
+
+    // round up the grid size according to the number of input elements
+    grid_size = (elements + block_size - 1) / block_size;
 
     return make_int2(grid_size, block_size);
 }
