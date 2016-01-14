@@ -1,4 +1,7 @@
 .tags*
 *.sublime-*
 build*/
+docs/doxy/
+docs/venv/
+docs/_build/
 
