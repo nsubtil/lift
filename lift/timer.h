@@ -46,11 +46,13 @@ struct timer
         : started(false), time_counter(0.0)
     { }
 
+    timer(const timer&) = delete;
+
     void start(void)
     {
         if (started)
         {
-            fprintf(stderr, "ERROR: inconsistent timer state");
+            fprintf(stderr, "ERROR: inconsistent timer state\n");
             abort();
         }
 
@@ -62,7 +64,7 @@ struct timer
     {
         if (!started)
         {
-            fprintf(stderr, "ERROR: inconsistent timer state");
+            fprintf(stderr, "ERROR: inconsistent timer state\n");
             abort();
         }
 
@@ -98,8 +100,10 @@ struct timer<cuda>
     float time_counter;
 
     timer()
-        : started(false), time_counter(0.0)
+        : started(false), time_counter(0.0), retired_events()
     { }
+
+    timer(const timer&) = delete;
 
     ~timer()
     {
@@ -110,10 +114,10 @@ struct timer<cuda>
     {
         if (started)
         {
-            fprintf(stderr, "ERROR: inconsistent timer state");
+            fprintf(stderr, "ERROR: inconsistent timer state\n");
             abort();
         }
-        
+
         cudaEventCreate(&active_sample.start);
         cudaEventCreate(&active_sample.end);
 
@@ -126,7 +130,7 @@ struct timer<cuda>
     {
         if (!started)
         {
-            fprintf(stderr, "ERROR: inconsistent timer state");
+            fprintf(stderr, "ERROR: inconsistent timer state\n");
             abort();
         }
 

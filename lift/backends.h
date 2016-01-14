@@ -85,11 +85,11 @@ struct backend_policy<host>
 
 // ugly macro hackery to force arbitrary device function / method instantiation
 // note: we intentionally never instantiate device functions for the host system
-#define __FUNC_CUDA(fun) auto *ptr_cuda = fun<lift::cuda>;
-#define __METHOD_CUDA(base, method) auto ptr_cuda = &base<lift::cuda>::method;
+#define __FUNC_CUDA(fun) void *ptr_cuda = (void *)fun<lift::cuda>;
+#define __METHOD_CUDA(base, method) void *ptr_cuda = (void *)&base<lift::cuda>::method;
 
-#define __FUNC_TBB(fun) auto *ptr_TBB= fun<lift::host>;
-#define __METHOD_TBB(base, method) auto ptr_TBB = &base<lift::host>::method;
+#define __FUNC_TBB(fun) auto *ptr_TBB= (void *)fun<lift::host>;
+#define __METHOD_TBB(base, method) auto ptr_TBB = (void *)&base<lift::host>::method;
 
 // free function instantiation
 #define INSTANTIATE(fun) \
