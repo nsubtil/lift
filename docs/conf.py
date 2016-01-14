@@ -295,4 +295,4 @@ breathe_default_project = "lift"
 
 # trigger doxygen build on readthedocs.org
 if os.environ.get('READTHEDOCS', None):
-    subprocess.call('doxygen config.doxygen', shell=True)
+    subprocess.call('doxygen', shell=True)
