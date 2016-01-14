@@ -40,7 +40,17 @@
 
 namespace lift {
 
-// tagged memory pointer
+/**
+ * Base class for tagged memory pointer implementation. Contains most of the
+ * common functionality for pointers that is not system-specific.
+ *
+ * \tparam system       Defines the target memory space for this pointer
+ * \tparam T            The underlying data type the pointer points at
+ * \tparam _index_type  Integral type used in offset calculations. Most GPU
+ *                      architectures lack full hardware support for 64-bit
+ *                      integer math, and so can benefit from having a 32-bit
+ *                      index even when building 64-bit code.
+ */
 template <target_system system,
           typename T,
           typename _index_type>
@@ -62,14 +72,17 @@ struct tagged_pointer_base
     typedef T*                                         iterator_type;
     typedef const T*                                   const_iterator_type;
 
-    // thrust-compatible iterators
+    /// Thrust-compatible iterator types
     typedef thrust_iterator_adaptor<system, value_type, iterator_type>         thrust_iterator_type;
     typedef thrust_iterator_adaptor<system, value_type, const_iterator_type>   thrust_const_iterator_type;
 
+    /// The default constructor initializes the pointer to null
     LIFT_HOST_DEVICE tagged_pointer_base()
         : storage(nullptr), storage_size(0)
     { }
 
+    /// Copy constructor creates a copy of the pointer.
+    /// If the target system mismatches, however, a null pointer is created.
     template <target_system other_system, typename other_value_type>
     LIFT_HOST_DEVICE tagged_pointer_base(tagged_pointer_base<other_system, other_value_type, index_type>& other)
     {
@@ -97,6 +110,8 @@ struct tagged_pointer_base
         }
     }
 
+    /// Copy constructor creates a copy of the pointer.
+    /// If the target system mismatches, however, a null pointer is created.
     template <target_system other_system, typename other_value_type>
     LIFT_HOST_DEVICE tagged_pointer_base& operator=(tagged_pointer_base<other_system, other_value_type, index_type>& other)
     {
@@ -183,22 +198,27 @@ struct tagged_pointer_base
         return const_iterator_type(storage + storage_size);
     }
 
-    // thrust-compatible iterators
+    /// Returns a Thrust-compatible iterator pointing at the base address of the pointer
     LIFT_HOST_DEVICE thrust_const_iterator_type t_begin() const
     {
         return thrust_const_iterator_type(storage);
     }
 
+    /// Returns a Thrust-compatible iterator pointing at the base address of the pointer
     LIFT_HOST_DEVICE thrust_iterator_type t_begin()
     {
         return thrust_iterator_type(storage);
     }
 
+    /// Returns a Thrust-compatible iterator pointing at the end of the memory region
+    /// covered by this pointer object
     LIFT_HOST_DEVICE thrust_const_iterator_type t_end() const
     {
         return thrust_const_iterator_type(storage + storage_size);
     }
 
+    /// Returns a Thrust-compatible iterator pointing at the end of the memory region
+    /// covered by this pointer object
     LIFT_HOST_DEVICE thrust_iterator_type t_end()
     {
         return thrust_iterator_type(storage + storage_size);
@@ -210,8 +230,6 @@ struct tagged_pointer_base
     {
         return storage_size;
     }
-
-    // TODO: reserve/max_size/capacity interface
 
     LIFT_HOST_DEVICE bool empty() const
     {
@@ -228,12 +246,68 @@ protected:
     size_type storage_size;
 };
 
+/**
+ * Lift's tagged pointer class.
+ *
+ * The type of a pointer includes a system tag, which identifies each pointer based on the
+ * memory space it belongs to. When dereferencing the pointer, the type of the index is also
+ * selectable at compile-time. This is because GPU implementations can benefit from 32-bit
+ * indexing even in 64-bit mode, as certain index calculations can be slow.
+ *
+ * Lift pointers are sized (meaning they track the amount of memory they point at), but
+ * no bounds-checking is performed. They implement C-style pointer semantics, allowing
+ * assignment from compatible pointer types as well as pointer arithmetic.
+ *
+ * Note that despite the fact that pointers are tagged with the memory space they belong to,
+ * Lift does not directly handle cross-device dereferencing in the pointer dereference operator.
+ * Directly dereferencing a GPU pointer on the CPU (or vice-versa) yields undefined behavior.
+ * Lift pointers provide an explicit interface for cross-memory-space reads/writes
+ * (peek() / poke()).
+ *
+ */
 template <target_system system,
           typename T,
           typename _index_type = uint32>
-struct pointer
-{ };
+struct pointer : public tagged_pointer_base<system, T, _index_type>
+{
+// the following declarations are meant for documenting the interface
+// all of these exist in template specializations only
+#if DOXYGEN_ONLY
+    typedef tagged_pointer_base<host, T, _index_type>   base;
 
+    typedef typename base::reference_type               reference_type;
+    typedef typename base::const_reference_type         const_reference_type;
+    typedef typename base::value_type                   value_type;
+    typedef typename base::index_type                   index_type;
+    typedef typename base::size_type                    size_type;
+    typedef typename base::iterator_type                iterator_type;
+    typedef typename base::const_iterator_type          const_iterator_type;
+
+    using base::base;
+
+    // return a pointer to a memory range within this pointer
+    LIFT_HOST_DEVICE pointer range(const size_type offset, size_type len = size_type(-1)) const;
+
+    // pointer arithmetic
+    // note that we don't do any bounds checking
+    LIFT_HOST_DEVICE pointer operator+(off_t offset) const;
+    LIFT_HOST_DEVICE pointer operator-(off_t offset) const;
+    // return a truncated pointer
+    LIFT_HOST_DEVICE pointer truncate(size_t new_size);
+
+    // read a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    value_type peek(index_type pos);
+
+    // poke a value behind this memory pointer
+    // note: this is slow for cuda pointers!
+    void poke(index_type pos, const value_type value);
+#endif
+};
+
+/**
+ * CPU version of pointer.
+ */
 template <typename T,
           typename _index_type>
 struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _index_type>
