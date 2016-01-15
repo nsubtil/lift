@@ -16,7 +16,6 @@ Contents:
    intro
    lift-vs-thrust
 
-
 Indices and tables
 ==================
 

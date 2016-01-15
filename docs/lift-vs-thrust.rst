@@ -1,22 +1,27 @@
 Lift for Thrust users
 =====================
 
-For users familiar with NVIDIA's Thrust, it is fairly easy to define Lift based on where it differs from Thrust.
-
-Lift offers similar functionality to Thrust, but with important design distinctions.
+Lift offers similar functionality to NVIDIA's Thrust, but with important design distinctions. For users familiar with Thrust, it is fairly easy to define Lift based on where it differs from Thrust.
 
 
 POD Memory Containers
 ---------------------
 
-Thrust's ``device_vector`` containers are non-POD types. They implement ``std::vector`` semantics, which means that the copy constructor and assignment operators create a new allocation and perform a memory copy, and the destructor releases the memory. While this approach makes sense in terms of preserving the interfaces programmers are already familiar with, it forces GPU code to be written under semantics that were not meant for code that needs to work across different memory spaces: parameters can only be passed by value from CPU to GPU, which forces code to use ``thrust::device_vector`` containers on the host but raw pointers on the device.
+Thrust's ``device_vector`` containers are non-POD types. They implement ``std::vector`` semantics, which means that the copy constructor and assignment operators create a new allocation and perform a memory copy, and the destructor releases the memory.
+
+While this approach makes sense in terms of preserving the interfaces programmers are already familiar with, it forces GPU code to be written under semantics that were not meant for code that needs to work across different memory spaces: parameters can only be passed by value from CPU to GPU, which forces code to use ``thrust::device_vector`` containers on the host but raw pointers on the device.
 
 Lift implements memory containers that expose *pointer semantics* instead. Lift's base memory container, the ``allocation`` class, is derived from Lift's tagged ``pointer`` class, which means that an allocation can be treated as a pointer.
 
 In addition to this, all of Lift's memory containers are POD types [#pod_vtable]_, which enables them to be passed directly by value to GPU kernels. This allows code to use the same structures on both sides: CPU code tracks data using the same containers that are used on the GPU side to perform calculations.
 
+
+No implicit memory ownership
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 There are drawbacks to this approach, however. Because Lift exposes pointer semantics and because it intends to allow pass-by-value for memory containers, object destructors are not allowed to release the memory automatically. This is because we can't keep track of references to the same memory, so it is up to the programmer to ensure that memory is released at the right time.
 
+One important exception is the :lift:`scoped_allocation` container, which will release memory in the destructor. This is meant for host code to use when creating temporary memory using a stack variable to track it. This object can not be passed by value to a GPU kernel under the same type; however, it can be passed as an ``allocation`` object, which it derives from.
 
 
 Tagged pointers
@@ -47,4 +52,4 @@ Lift also exposes a ``backend_policy`` object which converts a Lift ``target_sys
 
 .. rubric:: Footnotes
 
-.. [#pod_vtable] This is not strictly true: some of the memory containers expose virtual methods, which imply a virtual function table needs to exist. In such cases, Lift takes care to ensure that *no virtual functions are exposed on the GPU interface*. This means that, while the CPU virtual function table pointer is copied by value to the GPU, it can not actually be used on the GPU, making this usage safe.
+.. [#pod_vtable] This is not strictly true: some of the memory containers expose virtual methods, which imply a virtual function table needs to exist, making the object non-POD. In such cases, Lift takes care to ensure that *no virtual functions are exposed on the GPU interface*. This means that, while the CPU virtual function table pointer is copied by value to the GPU, it can not actually be used on the GPU, making this usage safe.

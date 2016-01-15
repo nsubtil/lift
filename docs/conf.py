@@ -33,7 +33,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
-    'breathe'
+    'breathe',
+    'sphinxcontrib.doxylink'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -290,9 +291,12 @@ texinfo_documents = [
 
 # -- Options for Breathe
 
-breathe_projects = { "lift": "doxy" }
+breathe_projects = { "lift": "_build" }
 breathe_default_project = "lift"
 
-# trigger doxygen build on readthedocs.org
-if os.environ.get('READTHEDOCS', None):
-    subprocess.call('doxygen', shell=True)
+# trigger doxygen build
+subprocess.call('doxygen', shell=True)
+
+# -- Options for doxylink
+doxylink = { 'lift' : ('_build/lift.tag', 'doxygen') }
+
