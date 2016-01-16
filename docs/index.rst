@@ -15,6 +15,8 @@ Contents:
 
    intro
    lift-vs-thrust
+   initialization
+   memory
 
 Indices and tables
 ==================

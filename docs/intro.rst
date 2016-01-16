@@ -21,3 +21,33 @@ The general design philosophy can be summarized:
 * Provide a code base that is easily understood
 * Avoid hidden functionality
 * Provide a stable, predictable code base
+
+
+Quick Example
+-------------
+
+Sort a set of key-value pairs::
+
+    #include <lift/memory.h>
+    #include <lift/backends.h>
+    #include <lift/parallel.h>
+
+    using namespace lift;
+
+    template <target_system system>
+    void test(void)
+    {
+        scoped_allocation<system, int> buf = { 3, 2, 5, 8, 10, 29, 4, 76, 6 };
+        scoped_allocation<system, int> temp_keys(buf.size());
+        scoped_allocation<system, uint8> temp_storage;
+
+        parallel<system>::sort(buf, temp_keys, temp_storage);
+
+        printf("%d %d %d\n", buf.peek(0), buf.peek(1), buf.peek(2));
+    }
+
+    int main(int argc, char **argv)
+    {
+        test<host>();
+        test<cuda>();
+    }
