@@ -291,7 +291,7 @@ texinfo_documents = [
 
 # -- Options for Breathe
 
-breathe_projects = { "lift": "_build" }
+breathe_projects = { "lift": "_build/xml" }
 breathe_default_project = "lift"
 
 # trigger doxygen build
