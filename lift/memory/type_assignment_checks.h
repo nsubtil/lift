@@ -37,9 +37,24 @@
 #include "../backends.h"
 #include "../decorators.h"
 
+/**
+ * \file Compile-type checks for various pointer-related conditions.
+ */
 namespace lift {
 namespace memory {
 
+/**
+ * Checks if a source and destination value types are assignment-compatible.
+ * This effectively only checks that the types are the same or that the destination
+ * type is a const version of the source type.
+ *
+ * \tparam dst_value_type   The lhs type for the assignment
+ * \tparam src_value_type   The rhs type for the assignment
+ *
+ * \returns Nothing. The return type is declared as bool because void constexpr functions
+ *          are not allowed, but the return value is not meaningful. Compilation is aborted
+ *          if the test fails.
+ */
 template <typename dst_value_type, typename src_value_type>
 static constexpr LIFT_HOST_DEVICE bool check_value_type_assignment_compatible(void)
 {
@@ -50,6 +65,11 @@ static constexpr LIFT_HOST_DEVICE bool check_value_type_assignment_compatible(vo
     return true;
 }
 
+/**
+ * Check if a source and destination pointer types are assignment-compatible. Operates the
+ * same as \ref check_value_type_assignment_compatible except that the input types are Lift
+ * pointer types.
+ */
 template <typename memptr_A, typename memptr_B>
 static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_assignment_compatible(void)
 {
@@ -60,6 +80,9 @@ static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_assignment_compatibl
     return true;
 }
 
+/**
+ * \deprecated Assert that a Lift pointer is mutable.
+ */
 template <typename memptr>
 static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_mutable(void)
 {
@@ -67,6 +90,9 @@ static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_mutable(void)
     return true;
 }
 
+/**
+ * \deprecated Assert that a Lift pointer is immutable.
+ */
 template <typename memptr>
 static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_immutable(void)
 {
@@ -74,6 +100,9 @@ static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_immutable(void)
     return true;
 }
 
+/**
+ * \deprecated Assert that pointer A and pointer B are either both mutable or both immutable.
+ */
 template <typename memptr_A, typename memptr_B>
 static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_mutability_matches(void)
 {
@@ -81,6 +110,9 @@ static constexpr LIFT_HOST_DEVICE bool check_memory_pointer_mutability_matches(v
     return true;
 }
 
+/**
+ * \deprecated Assert that pointer A and pointer B belong to the same memory space.
+ */
 template <typename memptr_A, typename memptr_B>
 static constexpr LIFT_HOST_DEVICE bool check_memory_space(void)
 {
@@ -90,4 +122,3 @@ static constexpr LIFT_HOST_DEVICE bool check_memory_space(void)
 
 } // namespace memory
 } // namespace lift
-
