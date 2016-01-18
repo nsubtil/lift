@@ -72,3 +72,5 @@ if (has_parent_scope)
     set(LIFT_LINK_LIBRARIES lift ${LINK_LIBS} PARENT_SCOPE)
     set(LIFT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIRS} PARENT_SCOPE)
 endif()
+
+cuda_build_clean_target()
