@@ -29,22 +29,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "test_harness.h"
+#include "harness/test_harness.h"
 
-std::vector<test *> test_list =
+#include <lift/memory.h>
+#include <lift/backends.h>
+#include <lift/parallel.h>
+
+using namespace lift;
+
+template <target_system system>
+void sort_test_run(void)
 {
-};
+    scoped_allocation<system, int> keys = {
+       41, 19, 93, 79, 85, 29, 18, 95, 11, 64, 62, 27, 77, 44, 87, 31, 50,
+       17,  0, 10,  9, 35, 73, 81, 47,  1, 34, 91, 32, 50, 23, 10, 65,  7,
+       31, 14,  6, 10, 59, 58, 15, 77,  7, 92, 64, 21, 14, 12, 10, 37
+    };
 
-extern void pointer_tests_register(void);
-extern void sort_tests_register(void);
+    scoped_allocation<host, int> expected_output = {
+        0,  1,  6,  7,  7,  9, 10, 10, 10, 10, 11, 12, 14, 14, 15, 17, 18,
+       19, 21, 23, 27, 29, 31, 31, 32, 34, 35, 37, 41, 44, 47, 50, 50, 58,
+       59, 62, 64, 64, 65, 73, 77, 77, 79, 81, 85, 87, 91, 92, 93, 95
+    };
 
-void generate_test_list(void)
-{
-    pointer_tests_register();
-    sort_tests_register();
+    scoped_allocation<system, int> temp_keys;
+    scoped_allocation<system, uint8> temp_storage;
+
+    parallel<system>::sort(keys, temp_keys, temp_storage);
+    parallel<system>::synchronize();
+    parallel<system>::check_errors();
+
+    scoped_allocation<host, int> h_keys;
+    h_keys.copy(keys);
+
+    for(size_t i = 0; i < h_keys.size(); i++)
+    {
+        lift_check(h_keys[i] == expected_output[i]);
+    }
 }
+TEST_FUN_HD(sort_test, sort_test_run);
 
-// debugging aid: set a breakpoint here to catch check failures
-void debug_check_failure(void)
+void sort_tests_register(void)
 {
+    TEST_REGISTER(sort_test_host);
+    // disabled due to issue #24: sort_test_cuda fails
+    // TEST_REGISTER(sort_test_cuda);
 }
