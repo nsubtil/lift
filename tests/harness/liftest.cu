@@ -31,11 +31,44 @@
 
 #include "test_harness.h"
 
+#include <lift/sys/compute_device.h>
+#include <lift/sys/host/compute_device_host.h>
+#include <lift/sys/cuda/compute_device_cuda.h>
+
+using namespace lift;
+
 thread_local test *current_test = nullptr;
 
 int main(int argc, char **argv)
 {
-    printf("Liftest starting\n\n");
+    compute_device_host cpu;
+    bool has_cuda;
+
+    printf("Liftest starting\n");
+    printf("CPU: %s\n", cpu.get_name());
+
+    std::vector<cuda_device_config> gpu_list;
+    std::string err;
+
+    cuda_device_config::enumerate_gpus(gpu_list, err);
+    if (gpu_list.size() == 0)
+    {
+        has_cuda = false;
+    } else {
+        has_cuda = true;
+
+        if (gpu_list.size() == 1)
+        {
+            printf("GPU: %s\n", gpu_list[0].device_name);
+        } else {
+            printf("GPU list:\n");
+            for(size_t i = 0; i < gpu_list.size(); i++)
+            {
+                printf("%lu: %s\n", i, gpu_list[i].device_name);
+            }
+        }
+    }
+    printf("\n");
 
     generate_test_list();
     bool success = true;
@@ -47,6 +80,11 @@ int main(int argc, char **argv)
     printf("running tests:\n");
     for(size_t i = 0; i < test_list.size(); i++)
     {
+        if (test_list[i]->need_cuda && !has_cuda)
+        {
+            continue;
+        }
+
         printf("  %s... ", test_list[i]->name.c_str());
         fflush(stdout);
 

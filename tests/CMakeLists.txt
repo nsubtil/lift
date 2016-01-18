@@ -7,7 +7,7 @@ set(liftest_src
     harness/test_list.cu)
 
 set(test_src
-    pointer_tests.cu)
+    pointer.cu)
 
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
 target_link_libraries(liftest lift ${LINK_LIBS})
