@@ -81,6 +81,11 @@ struct tagged_pointer_base
         : storage(nullptr), storage_size(0)
     { }
 
+    /// Construct a tagged pointer from a raw pointer
+    LIFT_HOST_DEVICE tagged_pointer_base(T *storage, size_type storage_size)
+       : storage(storage), storage_size(storage_size)
+    { }
+
     /// Copy constructor creates a copy of the pointer.
     /// If the target system mismatches, however, a null pointer is created.
     template <target_system other_system, typename other_value_type>
