@@ -118,10 +118,28 @@ struct timer<cuda>
             abort();
         }
 
-        cudaEventCreate(&active_sample.start);
-        cudaEventCreate(&active_sample.end);
+        cudaError_t err;
 
-        cudaEventRecord(active_sample.start);
+        err = cudaEventCreate(&active_sample.start);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "ERROR: cudaEventCreate failed (%d): %s\n", err, cudaGetErrorName(err));
+        }
+
+
+        err = cudaEventCreate(&active_sample.end);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "ERROR: cudaEventCreate failed (%d): %s\n", err, cudaGetErrorName(err));
+        }
+
+
+        err = cudaEventRecord(active_sample.start);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "ERROR: start: cudaEventRecord failed (%d): %s\n", err, cudaGetErrorName(err));
+        }
+
 
         started = true;
     }
@@ -134,7 +152,13 @@ struct timer<cuda>
             abort();
         }
 
-        cudaEventRecord(active_sample.end);
+        cudaError_t err;
+        err = cudaEventRecord(active_sample.end);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "ERROR: stop: cudaEventRecord failed (%d): %s\n", err, cudaGetErrorName(err));
+        }
+
 
         retired_events.push(active_sample);
         started = false;
