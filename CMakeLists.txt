@@ -71,6 +71,9 @@ if (has_parent_scope)
     # propagate link and include flags to parent scope
     set(LIFT_LINK_LIBRARIES lift ${LINK_LIBS} PARENT_SCOPE)
     set(LIFT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIRS} PARENT_SCOPE)
+else()
+    # call into cuda_build_clean_target() only if there is no parent project
+    # this is because cuda_build_clean_target() can only be called once per tree, so
+    # it must always be called by the root-level CMakeLists
+    cuda_build_clean_target()
 endif()
-
-cuda_build_clean_target()
