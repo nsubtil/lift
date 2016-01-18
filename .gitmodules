@@ -1,6 +1,6 @@
 [submodule "contrib/cub"]
 	path = contrib/cub
-	url = https://github.com/nsubtil/cub
+	url = https://github.com/nvlabs/cub
 [submodule "contrib/tbb"]
 	path = contrib/tbb
 	url = https://github.com/nsubtil/tbb
