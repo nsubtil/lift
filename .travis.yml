@@ -22,6 +22,6 @@ script:
   - mkdir build
   - pushd build
   - cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ..
-  - travis_wait make -j2 all tests run_tests
+  - travis_wait make -j2 all lift-tests lift-run-tests
   - popd
 

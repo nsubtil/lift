@@ -13,7 +13,7 @@ set(test_src
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
 target_link_libraries(liftest lift ${LINK_LIBS})
 
-add_custom_target(tests DEPENDS cpuid liftest)
-add_custom_target(run_tests
+add_custom_target(lift-tests DEPENDS cpuid liftest)
+add_custom_target(lift-run-tests
                   COMMAND "${CMAKE_BINARY_DIR}/tests/liftest"
-                  DEPENDS tests)
+                  DEPENDS lift-tests)
