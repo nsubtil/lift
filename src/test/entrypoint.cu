@@ -29,22 +29,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "test_harness.h"
+#include <lift/tests/harness.h>
 
 #include <lift/sys/compute_device.h>
 #include <lift/sys/host/compute_device_host.h>
 #include <lift/sys/cuda/compute_device_cuda.h>
 
+namespace lift {
+
+// the current test object pointer
+thread_local test *current_test = nullptr;
+// master list of tests to run
+// will be populated by external code
+std::vector<test *> test_list = { };
+
+}
+
 using namespace lift;
 
-thread_local test *current_test = nullptr;
+// debugging aid: set a breakpoint here to catch check failures
+void debug_check_failure(void)
+{
+}
 
 int main(int argc, char **argv)
 {
     compute_device_host cpu;
     bool has_cuda;
 
-    printf("Liftest starting\n");
+    printf("Lift test harness\n");
     printf("CPU: %s\n", cpu.get_name());
 
     std::vector<cuda_device_config> gpu_list;

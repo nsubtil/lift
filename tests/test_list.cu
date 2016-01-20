@@ -29,12 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "test_harness.h"
-
-std::vector<test *> test_list =
-{
-};
-
 extern void pointer_tests_register(void);
 extern void sort_tests_register(void);
 
@@ -42,9 +36,4 @@ void generate_test_list(void)
 {
     pointer_tests_register();
     sort_tests_register();
-}
-
-// debugging aid: set a breakpoint here to catch check failures
-void debug_check_failure(void)
-{
 }

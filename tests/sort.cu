@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "harness/test_harness.h"
+#include <lift/tests/harness.h>
 
 #include <lift/memory.h>
 #include <lift/backends.h>

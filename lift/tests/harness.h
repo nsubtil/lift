@@ -34,6 +34,8 @@
 #include <string>
 #include <vector>
 
+namespace lift {
+
 /**
  * The test object interface. Defines all common bits for tests.
  */
@@ -121,9 +123,6 @@ extern std::vector<test *> test_list;
 // TLS pointer to the current test object being run
 extern thread_local test *current_test;
 
-// debugging aid: empty function called whenever lift_check detects a failure
-extern void debug_check_failure(void);
-
 // check that expr is true, log and fail test if not
 #define lift_check(expr)        \
     if (!(expr))                \
@@ -141,5 +140,9 @@ extern void debug_check_failure(void);
     current_test->test_passed = false;                          \
     debug_check_failure()
 
+} // namespace lift
+
 // populate the master test list
 extern void generate_test_list(void);
+// debugging aid: empty function called whenever lift_check detects a failure
+extern void debug_check_failure(void);
