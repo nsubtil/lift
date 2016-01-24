@@ -249,6 +249,11 @@ inline void parallel<cuda>::sort(allocation<cuda, Key>& keys,
                                    temp_bytes,
                                    d_keys,
                                    len);
+
+    if (keys.data() != d_keys.Current())
+    {
+        cudaMemcpy(keys.data(), d_keys.Current(), sizeof(Key) * len, cudaMemcpyDeviceToDevice);
+    }
 }
 
 template <>
