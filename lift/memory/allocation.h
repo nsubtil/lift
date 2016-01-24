@@ -161,7 +161,7 @@ struct allocation : public pointer<system, T, _index_type>
     template <typename other_allocation>
     void copy(const other_allocation& other)
     {
-        memory::check_value_type_assignment_compatible<value_type, typename other_allocation::value_type>();
+        __internal::check_value_type_assignment_compatible<value_type, typename other_allocation::value_type>();
 
         resize(other.size());
 
