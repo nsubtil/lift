@@ -35,31 +35,59 @@
 #include <lift/backends.h>
 #include <lift/parallel.h>
 
+#include <algorithm>
+
 using namespace lift;
 
-template <target_system system>
-void sort_test_run(void)
+// simple linear congruential random number generator
+// we implement this here to avoid discrepancies in test vectors across systems
+static uint32 rand_state;
+
+static void rand_reset(void)
 {
-    scoped_allocation<system, int> keys = {
-       41, 19, 93, 79, 85, 29, 18, 95, 11, 64, 62, 27, 77, 44, 87, 31, 50,
-       17,  0, 10,  9, 35, 73, 81, 47,  1, 34, 91, 32, 50, 23, 10, 65,  7,
-       31, 14,  6, 10, 59, 58, 15, 77,  7, 92, 64, 21, 14, 12, 10, 37
-    };
+    rand_state = 0xdeadbeef;
+}
 
-    scoped_allocation<host, int> expected_output = {
-        0,  1,  6,  7,  7,  9, 10, 10, 10, 10, 11, 12, 14, 14, 15, 17, 18,
-       19, 21, 23, 27, 29, 31, 31, 32, 34, 35, 37, 41, 44, 47, 50, 50, 58,
-       59, 62, 64, 64, 65, 73, 77, 77, 79, 81, 85, 87, 91, 92, 93, 95
-    };
+static uint32 rand_next(void)
+{
+    rand_state = rand_state * 1103515245 + 12345;
+    return rand_state;
+}
 
-    scoped_allocation<system, int> temp_keys;
+// creates a test vector for sorting tests
+template <target_system system>
+static void generate_test_vector(allocation<system, uint32>& out, allocation<host, uint32>& out_sorted, size_t size)
+{
+    scoped_allocation<host, uint32> data(size);
+
+    rand_reset();
+    for(size_t i = 0; i < size; i++)
+    {
+        data[i] = rand_next();
+    }
+
+    out.copy(data);
+
+    std::sort(data.begin(), data.end());
+    out_sorted.copy(data);
+}
+
+template <target_system system>
+void sort_test_run(size_t size)
+{
+    scoped_allocation<system, uint32> keys;
+    scoped_allocation<host, uint32> expected_output;
+
+    scoped_allocation<system, uint32> temp_keys;
     scoped_allocation<system, uint8> temp_storage;
+
+    generate_test_vector(keys, expected_output, size);
 
     parallel<system>::sort(keys, temp_keys, temp_storage);
     parallel<system>::synchronize();
     parallel<system>::check_errors();
 
-    scoped_allocation<host, int> h_keys;
+    scoped_allocation<host, uint32> h_keys;
     h_keys.copy(keys);
 
     for(size_t i = 0; i < h_keys.size(); i++)
@@ -67,11 +95,51 @@ void sort_test_run(void)
         lift_check(h_keys[i] == expected_output[i]);
     }
 }
-TEST_FUN_HD(sort_test, sort_test_run);
+
+#define SORT_TEST_GEN(__size__) \
+    template <target_system system> \
+    void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
+    TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
+
+#define SORT_TEST_REGISTER(__size__) \
+    TEST_REGISTER_HD(sort_test_##__size__)
+
+SORT_TEST_GEN(100);
+SORT_TEST_GEN(1000);
+SORT_TEST_GEN(10000);
+SORT_TEST_GEN(100000);
+
+template <target_system system>
+void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
+{
+    for(size_t size = start_size; size <= end_size; size += step)
+    {
+        sort_test_run<system>(size);
+    }
+}
+
+#define SORT_TEST_SHMOO_GEN(__start__, __end__, __step__) \
+    template <target_system system> \
+    void sort_test_shmoo_##__start__##_##__end__##_##__step__##_run(void) { sort_test_shmoo_run<system>(__start__, __end__, __step__); } \
+    TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
+
+#define SORT_TEST_SHMOO_REGISTER(__start__, __end__, __step__) \
+    TEST_REGISTER_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__)
+
+SORT_TEST_SHMOO_GEN(1, 100, 1);
+SORT_TEST_SHMOO_GEN(100, 500, 50);
+SORT_TEST_SHMOO_GEN(500, 5000, 500);
+SORT_TEST_SHMOO_GEN(5000, 200000, 10000);
 
 void sort_tests_register(void)
 {
-    TEST_REGISTER(sort_test_host);
-    // disabled due to issue #24: sort_test_cuda fails
-    // TEST_REGISTER(sort_test_cuda);
+    SORT_TEST_REGISTER(100);
+    SORT_TEST_REGISTER(1000);
+    SORT_TEST_REGISTER(10000);
+    SORT_TEST_REGISTER(100000);
+
+    SORT_TEST_SHMOO_REGISTER(1, 100, 1);
+    SORT_TEST_SHMOO_REGISTER(100, 500, 50);
+    SORT_TEST_SHMOO_REGISTER(500, 5000, 500);
+    SORT_TEST_SHMOO_REGISTER(5000, 200000, 10000);
 }
