@@ -9,5 +9,4 @@ set(lift_test_lib_sources
     test/entrypoint.cu)
 
 cuda_add_library(liftest-lib ${lift_test_lib_sources} EXCLUDE_FROM_ALL)
-#add_dependencies(liftest-lib lift tbb)
 
