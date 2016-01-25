@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <lift/types.h>
+#include <lift/decorators.h>
 
 namespace lift {
 
@@ -161,6 +162,7 @@ struct integral_type_chooser<double>
 template <typename T>
 inline bool helper_check_fp_equal_ulp(T a, T b, uint32 max_ulp = 1)
 {
+#if !LIFT_DEVICE_COMPILATION
     int class_a = std::fpclassify(a);
     int class_b = std::fpclassify(b);
 
@@ -202,12 +204,14 @@ inline bool helper_check_fp_equal_ulp(T a, T b, uint32 max_ulp = 1)
     if (abs(v_a.integer - v_b.integer) <= max_ulp)
         return true;
     else
+#endif
         return false;
 }
 
 template <typename T>
-inline bool helper_check_fp_equal_tol(T a, T b, double tol)
+__host__ inline bool helper_check_fp_equal_tol(T a, T b, double tol)
 {
+#if !LIFT_DEVICE_COMPILATION
     int class_a = std::fpclassify(a);
     int class_b = std::fpclassify(b);
 
@@ -241,6 +245,9 @@ inline bool helper_check_fp_equal_tol(T a, T b, double tol)
     }
 
     return relative_delta <= tol;
+#else
+    return false;
+#endif
 }
 
 // check that a is equal to b within 1ULP
