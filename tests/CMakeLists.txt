@@ -6,8 +6,9 @@ set(test_src
     sort.cu
     pointer.cu)
 
+
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
-target_link_libraries(liftest liftest-lib lift ${LINK_LIBS})
+target_link_libraries(liftest m liftest-lib lift ${LINK_LIBS})
 
 add_custom_target(lift-tests DEPENDS cpuid liftest)
 add_custom_target(lift-run-tests
