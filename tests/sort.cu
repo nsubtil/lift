@@ -92,17 +92,17 @@ void sort_test_run(size_t size)
 
     for(size_t i = 0; i < h_keys.size(); i++)
     {
-        lift_check(h_keys[i] == expected_output[i]);
+        LIFT_TEST_CHECK(h_keys[i] == expected_output[i]);
     }
 }
 
 #define SORT_TEST_GEN(__size__) \
     template <target_system system> \
     void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
-    TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
+    LIFT_TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
 
 #define SORT_TEST_REGISTER(__size__) \
-    TEST_REGISTER_HD(sort_test_##__size__)
+    LIFT_TEST_REGISTER_HD(sort_test_##__size__)
 
 SORT_TEST_GEN(100);
 SORT_TEST_GEN(1000);
@@ -121,10 +121,10 @@ void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
 #define SORT_TEST_SHMOO_GEN(__start__, __end__, __step__) \
     template <target_system system> \
     void sort_test_shmoo_##__start__##_##__end__##_##__step__##_run(void) { sort_test_shmoo_run<system>(__start__, __end__, __step__); } \
-    TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
+    LIFT_TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
 
 #define SORT_TEST_SHMOO_REGISTER(__start__, __end__, __step__) \
-    TEST_REGISTER_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__)
+    LIFT_TEST_REGISTER_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__)
 
 SORT_TEST_SHMOO_GEN(1, 100, 1);
 SORT_TEST_SHMOO_GEN(100, 500, 50);

@@ -101,25 +101,25 @@ struct standalone_test : public test
 };
 
 // define a test object for a standalone function
-#define TEST_FUN(test_name, entrypoint) \
+#define LIFT_TEST_FUN(test_name, entrypoint) \
     standalone_test test_name(entrypoint, #test_name, false)
 
 // define a test object for a standalone function which requires CUDA to run
-#define TEST_FUN_CUDA(test_name, entrypoint) \
+#define LIFT_TEST_FUN_CUDA(test_name, entrypoint) \
     standalone_test test_name(entrypoint, #test_name, true)
 
 // define a test object for a standalone function templated on the target system
 // generates both host and device versions of the test
-#define TEST_FUN_HD(test_name, entrypoint) \
+#define LIFT_TEST_FUN_HD(test_name, entrypoint) \
     standalone_test test_name##_host(entrypoint<host>, #test_name "_host", false); \
     standalone_test test_name##_cuda(entrypoint<cuda>, #test_name "_cuda", true)
 
 // register a test object
-#define TEST_REGISTER(test_name) \
+#define LIFT_TEST_REGISTER(test_name) \
     test_list.push_back(&test_name)
 
 // register a pair of host/device test objects
-#define TEST_REGISTER_HD(test_name) \
+#define LIFT_TEST_REGISTER_HD(test_name) \
     test_list.push_back(&test_name##_host); \
     test_list.push_back(&test_name##_cuda)
 
@@ -129,7 +129,7 @@ extern std::vector<test *> test_list;
 extern thread_local test *current_test;
 
 // check that expr is true, log and fail test if not
-#define lift_check(expr)        \
+#define LIFT_TEST_CHECK(expr)   \
     if (!(expr))                \
     {                           \
         printf("\n    check failed at %s:%u: expression \"%s\"", __FILE__, __LINE__, #expr);    \
@@ -258,7 +258,7 @@ __host__ inline bool helper_check_fp_equal_tol(T a, T b, double tol)
 #define lift_check_fp_near_ulp(a, b, ulp) lift_check(helper_check_fp_equal_ulp((a), (b), (ulp)))
 
 // mark a test failure
-#define lift_fail()                                             \
+#define LIFT_TEST_FAIL()                                        \
     printf("\n    test failed at %s:%u", __FILE__, __LINE__);   \
     fflush(stdout);                                             \
     current_test->test_passed = false;                          \
