@@ -39,6 +39,8 @@
 #include <lift/types.h>
 #include <lift/decorators.h>
 
+#include <lift/tests/test-list.h>
+
 namespace lift {
 
 /**
@@ -102,31 +104,21 @@ struct standalone_test : public test
 
 // define a test object for a standalone function
 #define LIFT_TEST_FUN(test_name, entrypoint) \
-    standalone_test test_name(entrypoint, #test_name, false)
+    static standalone_test test_name(entrypoint, #test_name, false); \
+    static test_register test_name##_register(&test_name)
 
 // define a test object for a standalone function which requires CUDA to run
 #define LIFT_TEST_FUN_CUDA(test_name, entrypoint) \
-    standalone_test test_name(entrypoint, #test_name, true)
+    static standalone_test test_name(entrypoint, #test_name, true); \
+    static test_register test_name##_register(&test_name)
 
 // define a test object for a standalone function templated on the target system
 // generates both host and device versions of the test
 #define LIFT_TEST_FUN_HD(test_name, entrypoint) \
-    standalone_test test_name##_host(entrypoint<host>, #test_name "_host", false); \
-    standalone_test test_name##_cuda(entrypoint<cuda>, #test_name "_cuda", true)
-
-// register a test object
-#define LIFT_TEST_REGISTER(test_name) \
-    test_list.push_back(&test_name)
-
-// register a pair of host/device test objects
-#define LIFT_TEST_REGISTER_HD(test_name) \
-    test_list.push_back(&test_name##_host); \
-    test_list.push_back(&test_name##_cuda)
-
-// the master test list
-extern std::vector<test *> test_list;
-// TLS pointer to the current test object being run
-extern thread_local test *current_test;
+    static standalone_test test_name##_host(entrypoint<host>, #test_name "_host", false); \
+    static test_register test_name##_host_register(&test_name##_host); \
+    static standalone_test test_name##_cuda(entrypoint<cuda>, #test_name "_cuda", true); \
+    static test_register test_name##_cuda_register(&test_name##_cuda)
 
 // check that expr is true, log and fail test if not
 #define LIFT_TEST_CHECK(expr)   \
@@ -266,7 +258,5 @@ __host__ inline bool helper_check_fp_equal_tol(T a, T b, double tol)
 
 } // namespace lift
 
-// populate the master test list
-extern void generate_test_list(void);
 // debugging aid: empty function called whenever lift_check detects a failure
 extern void debug_check_failure(void);
