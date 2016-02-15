@@ -100,10 +100,3 @@ void pointer_cross_space_assignment_run(void)
     test_cross_space_pointer_assignment<cuda, host>();
 }
 LIFT_TEST_FUN(pointer_cross_space_assignment, pointer_cross_space_assignment_run);
-
-void pointer_tests_register(void)
-{
-    LIFT_TEST_REGISTER_HD(pointer_init);
-    LIFT_TEST_REGISTER_HD(pointer_assign);
-    LIFT_TEST_REGISTER(pointer_cross_space_assignment);
-}
