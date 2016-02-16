@@ -29,11 +29,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern void pointer_tests_register(void);
-extern void sort_tests_register(void);
+// code that deals with keeping track of the test list
 
-void generate_test_list(void)
+#include <lift/test/test.h>
+#include <lift/test/test_list.h>
+
+namespace lift {
+namespace test {
+
+// the current test object pointer
+thread_local test_object *current_test = nullptr;
+
+// function that "owns" the test list
+// this is meant to force a well-defined initialization location for the test list,
+// as it will be called prior to main()
+std::vector<test_object *>& get_test_list(void)
 {
-    pointer_tests_register();
-    sort_tests_register();
+    static std::vector<test_object *> test_list = { };
+    return test_list;
 }
+
+test_register::test_register(test_object *t)
+{
+    get_test_list().push_back(t);
+}
+
+} // namespace test
+} // namespace lift

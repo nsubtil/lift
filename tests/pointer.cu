@@ -29,7 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lift/tests/harness.h>
+#include <lift/test/test.h>
+#include <lift/test/check.h>
 
 #include <lift/memory/pointer.h>
 #include <lift/backends.h>
@@ -39,28 +40,28 @@ using namespace lift;
 // despite the fact that most of these tests check that CUDA pointers
 // are handled correctly, all of this code is host-only
 // all these tests can run on non-CUDA-enabled hosts, so we use
-// TEST_FUN instead of TEST_FUN_HD
+// LIFT_TEST_FUNC_HOST instead of LIFT_TEST_FUNC
 
 template <target_system system>
 void pointer_init_run(void)
 {
     pointer<system, int> ptr_null;
 
-    lift_check(ptr_null.data() == nullptr);
-    lift_check(ptr_null.size() == 0);
+    LIFT_TEST_CHECK(ptr_null.data() == nullptr);
+    LIFT_TEST_CHECK(ptr_null.size() == 0);
 
     pointer<system, int> ptr((int*)0xdeadbeef, 10);
 
-    lift_check(ptr.data() == (int*)0xdeadbeef);
-    lift_check(ptr.size() == 10);
+    LIFT_TEST_CHECK(ptr.data() == (int*)0xdeadbeef);
+    LIFT_TEST_CHECK(ptr.size() == 10);
 
     pointer<system, int> ptr_2(ptr);
 
-    lift_check(ptr_2.data() == (int*)0xdeadbeef);
-    lift_check(ptr_2.size() == 10);
+    LIFT_TEST_CHECK(ptr_2.data() == (int*)0xdeadbeef);
+    LIFT_TEST_CHECK(ptr_2.size() == 10);
 }
-TEST_FUN(pointer_init_host, pointer_init_run<host>);
-TEST_FUN(pointer_init_cuda, pointer_init_run<cuda>);
+LIFT_TEST_FUNC_HOST(pointer_init_host, pointer_init_run<host>);
+LIFT_TEST_FUNC_HOST(pointer_init_cuda, pointer_init_run<cuda>);
 
 template <target_system system>
 void pointer_assign_run(void)
@@ -71,11 +72,11 @@ void pointer_assign_run(void)
 
     ptr_2 = ptr;
 
-    lift_check(ptr_2.data() == (int*)0xdeadbeef);
-    lift_check(ptr_2.size() == 10);
+    LIFT_TEST_CHECK(ptr_2.data() == (int*)0xdeadbeef);
+    LIFT_TEST_CHECK(ptr_2.size() == 10);
 }
-TEST_FUN(pointer_assign_host, pointer_assign_run<host>);
-TEST_FUN(pointer_assign_cuda, pointer_assign_run<cuda>);
+LIFT_TEST_FUNC_HOST(pointer_assign_host, pointer_assign_run<host>);
+LIFT_TEST_FUNC_HOST(pointer_assign_cuda, pointer_assign_run<cuda>);
 
 template <target_system S1, target_system S2>
 void test_cross_space_pointer_assignment(void)
@@ -84,14 +85,14 @@ void test_cross_space_pointer_assignment(void)
 
     pointer<S2, int> ptr_2_ctor(ptr);
 
-    lift_check(ptr_2_ctor.data() == nullptr);
-    lift_check(ptr_2_ctor.size() == 0);
+    LIFT_TEST_CHECK(ptr_2_ctor.data() == nullptr);
+    LIFT_TEST_CHECK(ptr_2_ctor.size() == 0);
 
     pointer<S2, int> ptr_2_assign;
     ptr_2_assign = ptr;
 
-    lift_check(ptr_2_assign.data() == nullptr);
-    lift_check(ptr_2_assign.size() == 0);
+    LIFT_TEST_CHECK(ptr_2_assign.data() == nullptr);
+    LIFT_TEST_CHECK(ptr_2_assign.size() == 0);
 }
 
 void pointer_cross_space_assignment_run(void)
@@ -99,11 +100,4 @@ void pointer_cross_space_assignment_run(void)
     test_cross_space_pointer_assignment<host, cuda>();
     test_cross_space_pointer_assignment<cuda, host>();
 }
-TEST_FUN(pointer_cross_space_assignment, pointer_cross_space_assignment_run);
-
-void pointer_tests_register(void)
-{
-    TEST_REGISTER_HD(pointer_init);
-    TEST_REGISTER_HD(pointer_assign);
-    TEST_REGISTER(pointer_cross_space_assignment);
-}
+LIFT_TEST_FUNC_HOST(pointer_cross_space_assignment, pointer_cross_space_assignment_run);
