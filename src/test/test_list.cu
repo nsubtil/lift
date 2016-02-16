@@ -31,8 +31,8 @@
 
 // code that deals with keeping track of the test list
 
-#include <lift/tests/harness.h>
-#include <lift/tests/test_list.h>
+#include <lift/test/test.h>
+#include <lift/test/test_list.h>
 
 namespace lift {
 namespace test {
