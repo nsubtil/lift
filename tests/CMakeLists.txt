@@ -3,6 +3,7 @@ target_link_libraries(cpuid lift ${LINK_LIBS})
 
 set(test_src
     pointer.cu
+    fill.cu
     sort.cu)
 
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
