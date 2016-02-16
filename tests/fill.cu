@@ -51,7 +51,7 @@ void fill_vector()
     for (int i = 0; i < size; i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == fill_val)
-    }     
+    }
 }
 LIFT_TEST_FUNC(fill_vector_test, fill_vector);
 
@@ -67,6 +67,6 @@ void fill_input_iter()
     for (int i = 0; i < size; i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == fill_val)
-    }  
+    }
 }
-LIFT_TEST_FUNC(fill_input_iter_test, fill_vector);
+LIFT_TEST_FUNC(fill_input_iter_test, fill_input_iter);
