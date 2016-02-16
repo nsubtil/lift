@@ -42,7 +42,6 @@ using namespace lift;
 template <target_system system>
 void fill_vector()
 {
-    bool test_success = true;
     uint32 size = 1000;
     int fill_val = 10;
 
@@ -51,19 +50,14 @@ void fill_vector()
 
     for (int i = 0; i < size; i++)
     {
-        if (data.peek(i) != fill_val)
-        {
-            test_success = false;
-        }
+        LIFT_TEST_CHECK(data.peek(i) == fill_val)
     }     
-    LIFT_TEST_CHECK(test_success == true);
 }
 LIFT_TEST_FUNC(fill_vector_test, fill_vector);
 
 template <target_system system>
 void fill_input_iter()
 {
-    bool test_success = true;
     uint32 size = 1000;
     int fill_val = 10;
 
@@ -72,11 +66,7 @@ void fill_input_iter()
 
     for (int i = 0; i < size; i++)
     {
-        if (data.peek(i) != fill_val)
-        {
-            test_success = false;
-        }
+        LIFT_TEST_CHECK(data.peek(i) == fill_val)
     }  
-    LIFT_TEST_CHECK(test_success == true);
 }
 LIFT_TEST_FUNC(fill_input_iter_test, fill_vector);
