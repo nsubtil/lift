@@ -97,9 +97,9 @@ inline void parallel<host>::for_each(uint32 end,
 template <>
 template <typename InputIterator, typename T>
 inline void parallel<host>::fill(InputIterator begin,
-                            InputIterator end,
-                            T value,
-                            int2 launch_parameters)
+                                 InputIterator end,
+                                 T value,
+                                 int2 launch_parameters)
 {
     for_each(begin, end, fill_by_reference<T>(value), launch_parameters);
 }
@@ -107,8 +107,8 @@ inline void parallel<host>::fill(InputIterator begin,
 template <>
 template <typename T>
 inline void parallel<host>::fill(pointer<host, T>& vector,
-                            T value,
-                            int2 launch_parameters)
+                                 T value,
+                                 int2 launch_parameters)
 {
     for_each(vector, fill_by_reference<T>(value), launch_parameters);
 }

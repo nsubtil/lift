@@ -350,9 +350,8 @@ struct parallel
                                            UniqueOutputIterator unique_keys_output,
                                            LengthOutputIterator run_lengths_output,
                                            allocation<system, uint8>& temp_storage);
-    //Fills an allocation with a value
     /**
-     * Parallel for-each implementation. Sets each element in range [begin, end[ to value.
+     * Parallel fill implementation. Sets each element in range [begin, end[ to value.
      * \tparam InputIterator    Iterator type
      * \tparam T                Type for input data.
      *
@@ -377,8 +376,8 @@ struct parallel
      */
     template <typename T>
     static inline void fill(pointer<system, T>& vector,
-                                T value,
-                                int2 launch_parameters = { 0, 0 });
+                            T value,
+                            int2 launch_parameters = { 0, 0 });
 
     /**
      * Synchronizes the compute device.
