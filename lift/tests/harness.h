@@ -31,22 +31,21 @@
 
 #pragma once
 
-#include <cmath>
-
 #include <string>
 #include <vector>
 
 #include <lift/types.h>
 #include <lift/decorators.h>
 
-#include <lift/tests/test-list.h>
+#include <lift/tests/test_list.h>
 
 namespace lift {
+namespace test {
 
 /**
  * The test object interface. Defines all common bits for tests.
  */
-struct test
+struct test_object
 {
     const std::string name;                 // short test name
     const std::string description;          // longer test description
@@ -54,14 +53,14 @@ struct test
 
     bool test_passed;                       // set to true after run() if test passed
 
-    test(std::string name, bool need_cuda)
+    test_object(std::string name, bool need_cuda)
         : name(name),
           description(""),
           need_cuda(need_cuda),
           test_passed(false)
     { }
 
-    test(std::string name, std::string description, bool need_cuda)
+    test_object(std::string name, std::string description, bool need_cuda)
         : name(name),
           description(description),
           need_cuda(need_cuda),
@@ -83,17 +82,27 @@ struct test
 /**
  * Wrapper for standalone tests, which consist of a single function with no arguments and no return value.
  */
-struct standalone_test : public test
+struct standalone_test : public test_object
 {
     typedef void (*callable) (void);
     callable entrypoint;
 
-    standalone_test(callable entrypoint, std::string name, bool need_cuda)
-        : test(name, need_cuda), entrypoint(entrypoint)
+    standalone_test(callable entrypoint,
+                    std::string name,
+                    bool need_cuda)
+        : test_object(name,
+                      need_cuda),
+          entrypoint(entrypoint)
     { }
 
-    standalone_test(callable entrypoint, std::string name, std::string description, bool need_cuda)
-        : test(name, description, need_cuda), entrypoint(entrypoint)
+    standalone_test(callable entrypoint,
+                    std::string name,
+                    std::string description,
+                    bool need_cuda)
+        : test_object(name,
+                      description,
+                      need_cuda),
+          entrypoint(entrypoint)
     { }
 
     virtual void run(void)
@@ -102,161 +111,23 @@ struct standalone_test : public test
     }
 };
 
-// define a test object for a standalone function
-#define LIFT_TEST_FUN(test_name, entrypoint) \
-    static standalone_test test_name(entrypoint, #test_name, false); \
-    static test_register test_name##_register(&test_name)
+} // namespace test
+} // namespace lift
+
+// define a test object for a standalone function that does not require CUDA
+#define LIFT_TEST_FUNC_HOST(test_name, entrypoint) \
+    static lift::test::standalone_test test_name(entrypoint, #test_name, false); \
+    static lift::test::test_register test_name##_register(&test_name)
 
 // define a test object for a standalone function which requires CUDA to run
-#define LIFT_TEST_FUN_CUDA(test_name, entrypoint) \
-    static standalone_test test_name(entrypoint, #test_name, true); \
-    static test_register test_name##_register(&test_name)
+#define LIFT_TEST_FUNC_CUDA(test_name, entrypoint) \
+    static lift::test::standalone_test test_name(entrypoint, #test_name, true); \
+    static lift::test::test_register test_name##_register(&test_name)
 
 // define a test object for a standalone function templated on the target system
 // generates both host and device versions of the test
-#define LIFT_TEST_FUN_HD(test_name, entrypoint) \
-    static standalone_test test_name##_host(entrypoint<host>, #test_name "_host", false); \
-    static test_register test_name##_host_register(&test_name##_host); \
-    static standalone_test test_name##_cuda(entrypoint<cuda>, #test_name "_cuda", true); \
-    static test_register test_name##_cuda_register(&test_name##_cuda)
-
-// check that expr is true, log and fail test if not
-#define LIFT_TEST_CHECK(expr)   \
-    if (!(expr))                \
-    {                           \
-        printf("\n    check failed at %s:%u: expression \"%s\"", __FILE__, __LINE__, #expr);    \
-        fflush(stdout);                                                                         \
-        current_test->test_passed = false;                                                      \
-        debug_check_failure();  \
-    }
-
-template <typename T>
-struct integral_type_chooser
-{ };
-
-template <>
-struct integral_type_chooser<float>
-{
-    static_assert(sizeof(float) == sizeof(uint32), "float and uint32 sizes do not match");
-    typedef int32 type;
-    static constexpr int32 sign_bit = 0x80000000;
-};
-
-template <>
-struct integral_type_chooser<double>
-{
-    static_assert(sizeof(double) == sizeof(uint64), "double and uint64 sizes do not match");
-    typedef int64 type;
-    static constexpr int64 sign_bit = 0x8000000000000000;
-};
-
-// compare floating-point values
-template <typename T>
-inline bool helper_check_fp_equal_ulp(T a, T b, uint32 max_ulp = 1)
-{
-#if !LIFT_DEVICE_COMPILATION
-    int class_a = std::fpclassify(a);
-    int class_b = std::fpclassify(b);
-
-    if (class_a == FP_INFINITE ||
-        class_a == FP_NAN ||
-        class_b == FP_INFINITE ||
-        class_b == FP_NAN)
-    {
-        return false;
-    }
-
-    if (class_a != class_b)
-    {
-        return false;
-    }
-
-    if (class_a == FP_ZERO && class_b == FP_ZERO)
-    {
-        // note: we assume 0.0 and -0.0 are identical here
-        return true;
-    }
-
-    typedef union {
-        T real;
-        typename integral_type_chooser<T>::type integer;
-    } val;
-    constexpr auto sign_bit = integral_type_chooser<T>::sign_bit;
-
-    val v_a, v_b;
-    v_a.real = a;
-    v_b.real = b;
-
-    if (v_a.integer < 0)
-        v_a.integer = sign_bit - v_a.integer;
-
-    if (v_b.integer < 0)
-        v_b.integer = sign_bit - v_b.integer;
-
-    if (abs(v_a.integer - v_b.integer) <= max_ulp)
-        return true;
-    else
-#endif
-        return false;
-}
-
-template <typename T>
-__host__ inline bool helper_check_fp_equal_tol(T a, T b, double tol)
-{
-#if !LIFT_DEVICE_COMPILATION
-    int class_a = std::fpclassify(a);
-    int class_b = std::fpclassify(b);
-
-    if (class_a == FP_INFINITE ||
-        class_a == FP_NAN ||
-        class_b == FP_INFINITE ||
-        class_b == FP_NAN)
-    {
-        return false;
-    }
-
-    if (class_a != class_b)
-    {
-        return false;
-    }
-
-    if (class_a == FP_ZERO && class_b == FP_ZERO)
-    {
-        // note: we assume 0.0 and -0.0 are identical here
-        return true;
-    }
-
-    // note: this won't work well for values around zero
-    // if the expected value is zero, it's better to use the ULP version
-    T relative_delta;
-    if (fabs(a) > fabs(b))
-    {
-        relative_delta = fabs(b - a) / fabs(a);
-    } else {
-        relative_delta = fabs(a - b) / fabs(b);
-    }
-
-    return relative_delta <= tol;
-#else
-    return false;
-#endif
-}
-
-// check that a is equal to b within 1ULP
-#define lift_check_fp_equal(a, b)   lift_check(helper_check_fp_equal_ulp((a), (b), 1))
-// check that a is "near" b with a relative tolerance parameter
-#define lift_check_fp_near_tol(a, b, tol) lift_check(helper_check_fp_equal_tol((a), (b), (tol)))
-// check that a is "close to" b within some ULP threshold
-#define lift_check_fp_near_ulp(a, b, ulp) lift_check(helper_check_fp_equal_ulp((a), (b), (ulp)))
-
-// mark a test failure
-#define LIFT_TEST_FAIL()                                        \
-    printf("\n    test failed at %s:%u", __FILE__, __LINE__);   \
-    fflush(stdout);                                             \
-    current_test->test_passed = false;                          \
-    debug_check_failure()
-
-} // namespace lift
-
-// debugging aid: empty function called whenever lift_check detects a failure
-extern void debug_check_failure(void);
+#define LIFT_TEST_FUNC(test_name, entrypoint) \
+    static lift::test::standalone_test test_name##_host(entrypoint<host>, #test_name "_host", false); \
+    static lift::test::test_register test_name##_host_register(&test_name##_host); \
+    static lift::test::standalone_test test_name##_cuda(entrypoint<cuda>, #test_name "_cuda", true); \
+    static lift::test::test_register test_name##_cuda_register(&test_name##_cuda)

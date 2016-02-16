@@ -33,6 +33,7 @@
 #include <lift/types.h>
 
 namespace lift {
+namespace test {
 
 /**
  * Sets the PRNG seed for the random number generator.
@@ -41,26 +42,26 @@ namespace lift {
  *
  * @param seed The random number generator seed.
  */
-void lift_rand_reset(const uint32 seed = 0xdeadbeef);
+void rand_reset(const uint32 seed = 0xdeadbeef);
 
 // \cond
 
 template <typename T>
-struct lift_rand_uniform_default_arguments
+struct rand_uniform_default_arguments
 {
     static constexpr T min = 0;
     static constexpr T max = std::numeric_limits<T>::max();
 };
 
 template <>
-struct lift_rand_uniform_default_arguments<float>
+struct rand_uniform_default_arguments<float>
 {
     static constexpr float min = 0.0;
     static constexpr float max = 1.0;
 };
 
 template <>
-struct lift_rand_uniform_default_arguments<double>
+struct rand_uniform_default_arguments<double>
 {
     static constexpr double min = 0.0;
     static constexpr double max = 1.0;
@@ -84,8 +85,8 @@ struct lift_rand_uniform_default_arguments<double>
  * \return A uniformly-distributed random number.
  */
 template <typename T>
-T lift_rand_uniform(T min = lift_rand_uniform_default_arguments<T>::min,
-                    T max = lift_rand_uniform_default_arguments<T>::max);
+T rand_uniform(T min = rand_uniform_default_arguments<T>::min,
+                    T max = rand_uniform_default_arguments<T>::max);
 
 /**
  * Returns a random number with a normal PDF defined by mean and standard deviation.
@@ -100,6 +101,7 @@ T lift_rand_uniform(T min = lift_rand_uniform_default_arguments<T>::min,
  * \return A random number with a normal PDF.
  */
 template <typename T>
-T lift_rand_normal(T mean, T stddev);
+T rand_normal(T mean, T stddev);
 
+} // namespace test
 } // namespace lift
