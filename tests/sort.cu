@@ -30,6 +30,7 @@
  */
 
 #include <lift/tests/harness.h>
+#include <lift/tests/random.h>
 
 #include <lift/memory.h>
 #include <lift/backends.h>
@@ -39,31 +40,16 @@
 
 using namespace lift;
 
-// simple linear congruential random number generator
-// we implement this here to avoid discrepancies in test vectors across systems
-static uint32 rand_state;
-
-static void rand_reset(void)
-{
-    rand_state = 0xdeadbeef;
-}
-
-static uint32 rand_next(void)
-{
-    rand_state = rand_state * 1103515245 + 12345;
-    return rand_state;
-}
-
 // creates a test vector for sorting tests
 template <target_system system>
 static void generate_test_vector(allocation<system, uint32>& out, allocation<host, uint32>& out_sorted, size_t size)
 {
     scoped_allocation<host, uint32> data(size);
 
-    rand_reset();
+    lift_rand_reset();
     for(size_t i = 0; i < size; i++)
     {
-        data[i] = rand_next();
+        data[i] = lift_rand_uniform<uint32>();
     }
 
     out.copy(data);
