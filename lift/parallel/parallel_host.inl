@@ -95,6 +95,25 @@ inline void parallel<host>::for_each(uint32 end,
 }
 
 template <>
+template <typename InputIterator, typename T>
+inline void parallel<host>::fill(InputIterator begin,
+                            InputIterator end,
+                            T value,
+                            int2 launch_parameters)
+{
+    for_each(begin, end, fill_by_reference<T>(value), launch_parameters);
+}
+
+template <>
+template <typename T>
+inline void parallel<host>::fill(pointer<host, T>& vector,
+                            T value,
+                            int2 launch_parameters)
+{
+    for_each(vector, fill_by_reference<T>(value), launch_parameters);
+}
+
+template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
 inline void parallel<host>::inclusive_scan(InputIterator first,
                                            size_t len,
