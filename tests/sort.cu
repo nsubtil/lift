@@ -29,9 +29,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lift/tests/harness.h>
-#include <lift/tests/check.h>
-#include <lift/tests/random.h>
+#include <lift/test/test.h>
+#include <lift/test/check.h>
+#include <lift/test/random.h>
 
 #include <lift/memory.h>
 #include <lift/backends.h>

@@ -37,7 +37,7 @@
 #include <lift/types.h>
 #include <lift/decorators.h>
 
-#include <lift/tests/test_list.h>
+#include <lift/test/test_list.h>
 
 namespace lift {
 namespace test {
