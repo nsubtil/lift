@@ -29,29 +29,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
 // code that deals with keeping track of the test list
 
-#include <vector>
+#include <lift/test/test.h>
+#include <lift/test/test_list.h>
 
 namespace lift {
-
-// forward-decl of test structure
-struct test;
+namespace test {
 
 // the current test object pointer
-extern thread_local test *current_test;
+thread_local test_object *current_test = nullptr;
 
-// returns a reference to the global test list
-std::vector<test *>& get_test_list(void);
-
-// test registration object
-// adds a test to the global test list as part of the constructor
-// used to enable static initialization to generate the list of available tests for the harness
-struct test_register
+// function that "owns" the test list
+// this is meant to force a well-defined initialization location for the test list,
+// as it will be called prior to main()
+std::vector<test_object *>& get_test_list(void)
 {
-    test_register(test *t);
-};
+    static std::vector<test_object *> test_list = { };
+    return test_list;
+}
 
+test_register::test_register(test_object *t)
+{
+    get_test_list().push_back(t);
+}
+
+} // namespace test
 } // namespace lift

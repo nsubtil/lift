@@ -29,14 +29,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lift/tests/harness.h>
-#include <lift/tests/random.h>
+#include <lift/test/test.h>
+#include <lift/test/random.h>
 
 #include <lift/sys/compute_device.h>
 #include <lift/sys/host/compute_device_host.h>
 #include <lift/sys/cuda/compute_device_cuda.h>
 
 using namespace lift;
+using namespace lift::test;
 
 // debugging aid: set a breakpoint here to catch check failures
 void debug_check_failure(void)
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
 
         current_test = test_list[i];
 
-        lift_rand_reset();
+        rand_reset();
 
         test_list[i]->setup();
 

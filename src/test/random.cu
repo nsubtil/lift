@@ -29,17 +29,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lift/tests/random.h>
+#include <lift/test/random.h>
 
 #include <random>
 #include <cmath>
 #include <typeinfo>
 
 namespace lift {
+namespace test {
 
 static std::minstd_rand generator(0xdeadbeef);
 
-void lift_rand_reset(const uint32 seed)
+void rand_reset(const uint32 seed)
 {
     generator.seed(seed);
 }
@@ -64,25 +65,25 @@ struct uniform_distribution<double>
 
 // return a number in [min, max]
 template <typename T>
-T lift_rand_uniform(T min, T max)
+T rand_uniform(T min, T max)
 {
     typename uniform_distribution<T>::type d(min, max);
     return d(generator);
 }
 
-template uint8  lift_rand_uniform<uint8> (uint8  min, uint8  max);
-template uint16 lift_rand_uniform<uint16>(uint16 min, uint16 max);
-template uint32 lift_rand_uniform<uint32>(uint32 min, uint32 max);
-template uint64 lift_rand_uniform<uint64>(uint64 min, uint64 max);
-template int8   lift_rand_uniform<int8>  (int8   min, int8   max);
-template int16  lift_rand_uniform<int16> (int16  min, int16  max);
-template int32  lift_rand_uniform<int32> (int32  min, int32  max);
-template int64  lift_rand_uniform<int64> (int64  min, int64  max);
-template float  lift_rand_uniform<float> (float  min, float  max);
-template double lift_rand_uniform<double>(double min, double max);
+template uint8  rand_uniform<uint8> (uint8  min, uint8  max);
+template uint16 rand_uniform<uint16>(uint16 min, uint16 max);
+template uint32 rand_uniform<uint32>(uint32 min, uint32 max);
+template uint64 rand_uniform<uint64>(uint64 min, uint64 max);
+template int8   rand_uniform<int8>  (int8   min, int8   max);
+template int16  rand_uniform<int16> (int16  min, int16  max);
+template int32  rand_uniform<int32> (int32  min, int32  max);
+template int64  rand_uniform<int64> (int64  min, int64  max);
+template float  rand_uniform<float> (float  min, float  max);
+template double rand_uniform<double>(double min, double max);
 
 template <typename T>
-T lift_rand_normal(T mean, T stddev)
+T rand_normal(T mean, T stddev)
 {
     std::normal_distribution<> d(mean, stddev);
     auto val = d(generator);
@@ -96,15 +97,16 @@ T lift_rand_normal(T mean, T stddev)
     }
 }
 
-template uint8  lift_rand_normal<uint8> (uint8  mean, uint8  stddev);
-template uint16 lift_rand_normal<uint16>(uint16 mean, uint16 stddev);
-template uint32 lift_rand_normal<uint32>(uint32 mean, uint32 stddev);
-template uint64 lift_rand_normal<uint64>(uint64 mean, uint64 stddev);
-template int8   lift_rand_normal<int8>  (int8   mean, int8   stddev);
-template int16  lift_rand_normal<int16> (int16  mean, int16  stddev);
-template int32  lift_rand_normal<int32> (int32  mean, int32  stddev);
-template int64  lift_rand_normal<int64> (int64  mean, int64  stddev);
-template float  lift_rand_normal<float> (float  mean, float  stddev);
-template double lift_rand_normal<double>(double mean, double stddev);
+template uint8  rand_normal<uint8> (uint8  mean, uint8  stddev);
+template uint16 rand_normal<uint16>(uint16 mean, uint16 stddev);
+template uint32 rand_normal<uint32>(uint32 mean, uint32 stddev);
+template uint64 rand_normal<uint64>(uint64 mean, uint64 stddev);
+template int8   rand_normal<int8>  (int8   mean, int8   stddev);
+template int16  rand_normal<int16> (int16  mean, int16  stddev);
+template int32  rand_normal<int32> (int32  mean, int32  stddev);
+template int64  rand_normal<int64> (int64  mean, int64  stddev);
+template float  rand_normal<float> (float  mean, float  stddev);
+template double rand_normal<double>(double mean, double stddev);
 
+} // namespace test
 } // namespace lift
