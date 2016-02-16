@@ -350,6 +350,30 @@ struct parallel
                                            UniqueOutputIterator unique_keys_output,
                                            LengthOutputIterator run_lengths_output,
                                            allocation<system, uint8>& temp_storage);
+    /**
+     * Parallel fill implementation. Sets each element in range [begin, end[ to value.
+     * \tparam InputIterator    Iterator type
+     * \tparam T                Type for input data.
+     *
+     * \param begin             Iterator pointing at the first element to be processed.
+     * \param end               Iterator pointing at the end of the range to be processed.
+     * \param value             The value with which to fill the range.
+     */
+    template <typename InputIterator, typename T>
+    static inline void fill(InputIterator begin,
+                            InputIterator end,
+                            T value);
+    /**
+     * Pointer version of fill. Fills each element of vector with value
+     *
+     * \tparam T                Data type for vector.
+     *
+     * \param vector            The memory region to fill with value
+     * \param value             Value to fill each element in  vector
+     */
+    template <typename T>
+    static inline void fill(pointer<system, T>& vector,
+                            T value);
 
     /**
      * Synchronizes the compute device.
