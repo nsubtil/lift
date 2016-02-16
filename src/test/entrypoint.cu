@@ -37,6 +37,7 @@
 #include <lift/sys/cuda/compute_device_cuda.h>
 
 using namespace lift;
+using namespace lift::test;
 
 // debugging aid: set a breakpoint here to catch check failures
 void debug_check_failure(void)
@@ -95,7 +96,7 @@ int main(int argc, char **argv)
 
         current_test = test_list[i];
 
-        lift_rand_reset();
+        rand_reset();
 
         test_list[i]->setup();
 

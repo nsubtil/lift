@@ -30,6 +30,7 @@
  */
 
 #include <lift/tests/harness.h>
+#include <lift/tests/check.h>
 #include <lift/tests/random.h>
 
 #include <lift/memory.h>
@@ -39,6 +40,7 @@
 #include <algorithm>
 
 using namespace lift;
+using namespace lift::test;
 
 // creates a test vector for sorting tests
 template <target_system system>
@@ -46,10 +48,10 @@ static void generate_test_vector(allocation<system, uint32>& out, allocation<hos
 {
     scoped_allocation<host, uint32> data(size);
 
-    lift_rand_reset();
+    rand_reset();
     for(size_t i = 0; i < size; i++)
     {
-        data[i] = lift_rand_uniform<uint32>();
+        data[i] = rand_uniform<uint32>();
     }
 
     out.copy(data);
@@ -85,7 +87,7 @@ static void sort_test_run(size_t size)
 #define SORT_TEST_GEN(__size__) \
     template <target_system system> \
     static void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
-    LIFT_TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
+    LIFT_TEST_FUNC(sort_test_##__size__, sort_test_##__size__##_run)
 
 SORT_TEST_GEN(100);
 SORT_TEST_GEN(1000);
@@ -104,7 +106,7 @@ static void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
 #define SORT_TEST_SHMOO_GEN(__start__, __end__, __step__) \
     template <target_system system> \
     static void sort_test_shmoo_##__start__##_##__end__##_##__step__##_run(void) { sort_test_shmoo_run<system>(__start__, __end__, __step__); } \
-    LIFT_TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
+    LIFT_TEST_FUNC(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
 
 SORT_TEST_SHMOO_GEN(1, 100, 1);
 SORT_TEST_SHMOO_GEN(100, 500, 50);
