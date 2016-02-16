@@ -110,6 +110,78 @@ inline void parallel<cuda>::for_each(uint32 end,
                    launch_parameters);
 }
 
+template <target_system system, typename d_type>
+struct fill_by_index
+{
+    pointer<system, d_type> data;
+    d_type value;
+
+    fill(pointer<system, d_type> &data, d_type value)
+        : data(data), value(value)
+    { }
+
+    LIFT_HOST_DEVICE void operator() (const int index)
+    {
+        data[index] = value;
+    }
+};
+
+template <target_system system, typename d_type>
+struct fill_by_reference
+{
+    pointer<system, d_type> data;
+    d_type value;
+
+    fill(pointer<system, d_type> &data, d_type value)
+        : data(data), value(value)
+    { }
+
+    LIFT_HOST_DEVICE void operator() (const int &ref)
+    {
+        ref = value;
+    }
+};
+
+template <>
+template <typename InputIterator, typename d_type>
+inline void parallel<cuda>::fill(InputIterator begin,
+                            InputIterator end,
+                            d_type value,
+                            pointer<system, d_type>& vector,
+                            int2 launch_parameters = { 0, 0 })
+{
+    for_each(begin, end, fill_by_reference<cuda, d_type>(vector, value), launch_parameters);
+}
+
+template <>
+template <typename d_type>
+inline void parallel<cuda>::fill(pointer<system, d_type>& vector,
+                            d_type value,
+                            int2 launch_parameters = { 0, 0 })
+{
+    for_each(vector, fill_by_reference<cuda, d_type>(vector, value), launch_parameters);
+}
+
+template <>
+template <typename d_type>
+inline void parallel<cuda>::fill(uint2 range,
+                            d_type value,
+                            pointer<system, d_type>& vector,
+                            int2 launch_parameters = { 0, 0 })
+{
+    for_each(range, fill_by_index<cuda, d_type>(vector, value), launch_parameters);
+}
+
+template <>
+template <typename d_type>
+inline void parallel<cuda>::fill(uint32 end,
+                            d_type value,
+                            pointer<system, d_type>& vector,
+                            int2 launch_parameters = { 0, 0 })
+{
+    for_each(end, fill_by_index<cuda, d_type>(vector, value), launch_parameters);
+}
+
 template <>
 template <typename InputIterator, typename OutputIterator, typename Predicate>
 inline void parallel<cuda>::inclusive_scan(InputIterator first,

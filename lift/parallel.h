@@ -350,6 +350,65 @@ struct parallel
                                            UniqueOutputIterator unique_keys_output,
                                            LengthOutputIterator run_lengths_output,
                                            allocation<system, uint8>& temp_storage);
+    //Fills an allocation with a value
+    /**
+     * Parallel for-each implementation. Applies UnaryFunction f to each element in the range [begin, end[.
+     * \anchor for_each
+     * \tparam InputIterator    Iterator type
+     * \tparam d_type           Type for input data.
+     *
+     * \param begin             Iterator pointing at the first element to be processed.
+     * \param end               Iterator pointing at the end of the range to be processed.
+     * \param value             The value with which to fill the range.
+     * \param launch_parameters Grid launch parameters for GPU backend.
+     */
+    template <typename InputIterator, typename d_type>
+    static inline void fill(InputIterator begin,
+                            InputIterator end,
+                            d_type value,
+                            pointer<system, d_type>& vector,
+                            int2 launch_parameters = { 0, 0 });
+    /**
+     * Pointer version of fill. Fills each element of vector with value
+     *
+     * \tparam d_type           Data type for vector.
+     *
+     * \param vector            The memory region to fill with value
+     * \param value             Value to fill each element in  vector
+     * \param launch_parameters Same as in \ref fill
+     */
+    template <typename d_type>
+    static inline void fill(pointer<system, d_type>& vector,
+                                d_type value,
+                                int2 launch_parameters = { 0, 0 });
+    /**
+     * Range-based version of fill. 
+     *
+     * \tparam d_type           Data tyoe for vector
+     *
+     * \param range             Integer range to iterate over.
+     * \param value             Value to fill each element in  vector
+     * \param launch_parameters Same as in \ref fill
+     */
+    template <typename d_type>
+    static inline void fill(uint2 range,
+                                d_type value,
+                                pointer<system, d_type>& vector,
+                                int2 launch_parameters = { 0, 0 });
+    /**
+     * 0-based range version of fill.
+     *
+     * \tparam d_type           Data type for vector
+     *
+     * \param end               End point of the interval to iterate over.
+     * \param value             Value to fill each element in  vector
+     * \param launch_parameters Same as in \ref fill
+     */
+    template <typename d_type>
+    static inline void fill(uint32 end,
+                                d_type value,
+                                pointer<system, d_type>& vector,
+                                int2 launch_parameters = { 0, 0 });
 
     /**
      * Synchronizes the compute device.
