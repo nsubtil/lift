@@ -29,11 +29,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern void pointer_tests_register(void);
-extern void sort_tests_register(void);
+#pragma once
 
-void generate_test_list(void)
+// code that deals with keeping track of the test list
+
+#include <vector>
+
+namespace lift {
+
+// forward-decl of test structure
+struct test;
+
+// the current test object pointer
+extern thread_local test *current_test;
+
+// returns a reference to the global test list
+std::vector<test *>& get_test_list(void);
+
+// test registration object
+// adds a test to the global test list as part of the constructor
+// used to enable static initialization to generate the list of available tests for the harness
+struct test_register
 {
-    pointer_tests_register();
-    sort_tests_register();
-}
+    test_register(test *t);
+};
+
+} // namespace lift

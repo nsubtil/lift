@@ -2,10 +2,8 @@ cuda_add_executable(cpuid standalone/cpuid.cu EXCLUDE_FROM_ALL)
 target_link_libraries(cpuid lift ${LINK_LIBS})
 
 set(test_src
-    test_list.cu
-    sort.cu
-    pointer.cu)
-
+    pointer.cu
+    sort.cu)
 
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
 target_link_libraries(liftest m liftest-lib lift ${LINK_LIBS})

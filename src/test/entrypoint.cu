@@ -30,20 +30,11 @@
  */
 
 #include <lift/tests/harness.h>
+#include <lift/tests/random.h>
 
 #include <lift/sys/compute_device.h>
 #include <lift/sys/host/compute_device_host.h>
 #include <lift/sys/cuda/compute_device_cuda.h>
-
-namespace lift {
-
-// the current test object pointer
-thread_local test *current_test = nullptr;
-// master list of tests to run
-// will be populated by external code
-std::vector<test *> test_list = { };
-
-}
 
 using namespace lift;
 
@@ -83,7 +74,6 @@ int main(int argc, char **argv)
     }
     printf("\n");
 
-    generate_test_list();
     bool success = true;
 
     size_t tests_run = 0;
@@ -91,6 +81,8 @@ int main(int argc, char **argv)
     size_t tests_failed = 0;
 
     printf("running tests:\n");
+    auto& test_list = get_test_list();
+
     for(size_t i = 0; i < test_list.size(); i++)
     {
         if (test_list[i]->need_cuda && !has_cuda)
@@ -102,6 +94,8 @@ int main(int argc, char **argv)
         fflush(stdout);
 
         current_test = test_list[i];
+
+        lift_rand_reset();
 
         test_list[i]->setup();
 

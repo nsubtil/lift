@@ -30,6 +30,7 @@
  */
 
 #include <lift/tests/harness.h>
+#include <lift/tests/random.h>
 
 #include <lift/memory.h>
 #include <lift/backends.h>
@@ -39,31 +40,16 @@
 
 using namespace lift;
 
-// simple linear congruential random number generator
-// we implement this here to avoid discrepancies in test vectors across systems
-static uint32 rand_state;
-
-static void rand_reset(void)
-{
-    rand_state = 0xdeadbeef;
-}
-
-static uint32 rand_next(void)
-{
-    rand_state = rand_state * 1103515245 + 12345;
-    return rand_state;
-}
-
 // creates a test vector for sorting tests
 template <target_system system>
 static void generate_test_vector(allocation<system, uint32>& out, allocation<host, uint32>& out_sorted, size_t size)
 {
     scoped_allocation<host, uint32> data(size);
 
-    rand_reset();
+    lift_rand_reset();
     for(size_t i = 0; i < size; i++)
     {
-        data[i] = rand_next();
+        data[i] = lift_rand_uniform<uint32>();
     }
 
     out.copy(data);
@@ -73,7 +59,7 @@ static void generate_test_vector(allocation<system, uint32>& out, allocation<hos
 }
 
 template <target_system system>
-void sort_test_run(size_t size)
+static void sort_test_run(size_t size)
 {
     scoped_allocation<system, uint32> keys;
     scoped_allocation<host, uint32> expected_output;
@@ -92,17 +78,14 @@ void sort_test_run(size_t size)
 
     for(size_t i = 0; i < h_keys.size(); i++)
     {
-        lift_check(h_keys[i] == expected_output[i]);
+        LIFT_TEST_CHECK(h_keys[i] == expected_output[i]);
     }
 }
 
 #define SORT_TEST_GEN(__size__) \
     template <target_system system> \
-    void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
-    TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
-
-#define SORT_TEST_REGISTER(__size__) \
-    TEST_REGISTER_HD(sort_test_##__size__)
+    static void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
+    LIFT_TEST_FUN_HD(sort_test_##__size__, sort_test_##__size__##_run)
 
 SORT_TEST_GEN(100);
 SORT_TEST_GEN(1000);
@@ -110,7 +93,7 @@ SORT_TEST_GEN(10000);
 SORT_TEST_GEN(100000);
 
 template <target_system system>
-void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
+static void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
 {
     for(size_t size = start_size; size <= end_size; size += step)
     {
@@ -120,26 +103,10 @@ void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
 
 #define SORT_TEST_SHMOO_GEN(__start__, __end__, __step__) \
     template <target_system system> \
-    void sort_test_shmoo_##__start__##_##__end__##_##__step__##_run(void) { sort_test_shmoo_run<system>(__start__, __end__, __step__); } \
-    TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
-
-#define SORT_TEST_SHMOO_REGISTER(__start__, __end__, __step__) \
-    TEST_REGISTER_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__)
+    static void sort_test_shmoo_##__start__##_##__end__##_##__step__##_run(void) { sort_test_shmoo_run<system>(__start__, __end__, __step__); } \
+    LIFT_TEST_FUN_HD(sort_test_shmoo_##__start__##_##__end__##_##__step__, sort_test_shmoo_##__start__##_##__end__##_##__step__##_run)
 
 SORT_TEST_SHMOO_GEN(1, 100, 1);
 SORT_TEST_SHMOO_GEN(100, 500, 50);
 SORT_TEST_SHMOO_GEN(500, 5000, 500);
 SORT_TEST_SHMOO_GEN(5000, 200000, 10000);
-
-void sort_tests_register(void)
-{
-    SORT_TEST_REGISTER(100);
-    SORT_TEST_REGISTER(1000);
-    SORT_TEST_REGISTER(10000);
-    SORT_TEST_REGISTER(100000);
-
-    SORT_TEST_SHMOO_REGISTER(1, 100, 1);
-    SORT_TEST_SHMOO_REGISTER(100, 500, 50);
-    SORT_TEST_SHMOO_REGISTER(500, 5000, 500);
-    SORT_TEST_SHMOO_REGISTER(5000, 200000, 10000);
-}
