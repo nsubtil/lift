@@ -352,8 +352,7 @@ struct parallel
                                            allocation<system, uint8>& temp_storage);
     //Fills an allocation with a value
     /**
-     * Parallel for-each implementation. Applies UnaryFunction f to each element in the range [begin, end[.
-     * \anchor for_each
+     * Parallel for-each implementation. Sets each element in range [begin, end[ to value.
      * \tparam InputIterator    Iterator type
      * \tparam T                Type for input data.
      *
