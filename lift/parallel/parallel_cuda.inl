@@ -129,19 +129,17 @@ template <>
 template <typename InputIterator, typename T>
 inline void parallel<cuda>::fill(InputIterator begin,
                                  InputIterator end,
-                                 T value,
-                                 int2 launch_parameters)
+                                 T value)
 {
-    for_each(begin, end, fill_by_reference<T>(value), launch_parameters);
+    for_each(begin, end, fill_by_reference<T>(value));
 }
 
 template <>
 template <typename T>
 inline void parallel<cuda>::fill(pointer<cuda, T>& vector,
-                                 T value,
-                                 int2 launch_parameters)
+                                 T value)
 {
-    for_each(vector, fill_by_reference<T>(value), launch_parameters);
+    for_each(vector, fill_by_reference<T>(value));
 }
 
 template <>

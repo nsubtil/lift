@@ -358,13 +358,11 @@ struct parallel
      * \param begin             Iterator pointing at the first element to be processed.
      * \param end               Iterator pointing at the end of the range to be processed.
      * \param value             The value with which to fill the range.
-     * \param launch_parameters Grid launch parameters for GPU backend.
      */
     template <typename InputIterator, typename T>
     static inline void fill(InputIterator begin,
                             InputIterator end,
-                            T value,
-                            int2 launch_parameters = { 0, 0 });
+                            T value);
     /**
      * Pointer version of fill. Fills each element of vector with value
      *
@@ -372,12 +370,10 @@ struct parallel
      *
      * \param vector            The memory region to fill with value
      * \param value             Value to fill each element in  vector
-     * \param launch_parameters Same as in \ref fill
      */
     template <typename T>
     static inline void fill(pointer<system, T>& vector,
-                            T value,
-                            int2 launch_parameters = { 0, 0 });
+                            T value);
 
     /**
      * Synchronizes the compute device.
