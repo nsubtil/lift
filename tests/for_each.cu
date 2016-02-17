@@ -75,7 +75,7 @@ template <target_system system>
 void for_each_end()
 {
     int sub_num = 10;
-    allocation<system, int> data(vec_len);
+    scoped_allocation<system, int> data(vec_len);
     parallel<system>::fill(data, 0);
     parallel<system>::for_each(data.size(), add<system, int>(data, sub_num));
 
@@ -90,7 +90,7 @@ template <target_system system>
 void for_each_iter()
 {
     int add_num = 10;
-    allocation<system, int> data(vec_len);
+    scoped_allocation<system, int> data(vec_len);
     parallel<system>::fill(data, 0);
     parallel<system>::for_each(data.begin(), data.end(),
                                p_add<system, int>(data, add_num));
@@ -106,7 +106,7 @@ template <target_system system>
 void for_each_pointer()
 {
     int add_num = 10;
-    allocation<system, int> data(vec_len);
+    scoped_allocation<system, int> data(vec_len);
     parallel<system>::fill(data, 0);
     parallel<system>::for_each(data, p_add<system, int>(data, add_num));
 
@@ -121,7 +121,7 @@ template <target_system system>
 void for_each_range()
 {
     int add_num = 10;
-    allocation<system, int> data(vec_len);
+    scoped_allocation<system, int> data(vec_len);
     parallel<system>::fill(data, 0);
     parallel<system>::for_each({data.size()/2, data.size()},
                                add<system, int>(data, add_num));
