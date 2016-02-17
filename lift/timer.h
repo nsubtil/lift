@@ -35,19 +35,40 @@
 
 namespace lift {
 
+/**
+ * Timer structure that measures the time difference between user-defined events.
+ *
+ * Lift timers measure the time between start() and stop() calls. Time is measured on the target compute device.
+ * Note that because GPU timers are asynchronous, calling stop() does not necessarily mean that the timer has
+ * completed the measurement.
+ *
+ * Timers can be used multiple times and will accumulate timing information. Calling elapsed_time() will always return
+ * the total amount of time measured between successive start() / stop() calls. This implies that elapsed_time() is a
+ * synchronization point for GPU timers.
+ *
+ * In addition to measuring time, this object has the ability to keep track of the amount of data processed
+ * and return a throughput value.
+ */
 template <target_system system>
 struct timer
 {
     struct timeval start_event;
     bool started;
     float time_counter;
+    uint64 bytes_tracked;
 
     timer()
-        : started(false), time_counter(0.0)
+        : started(false),
+          time_counter(0.0),
+          bytes_tracked(0)
     { }
 
+    /// Copy constructor is deleted to prevent GPU timers from being moved to device.
     timer(const timer&) = delete;
 
+    /**
+     * Starts the timer. Must be followed by a stop() call.
+     */
     void start(void)
     {
         if (started)
@@ -60,6 +81,30 @@ struct timer
         started = true;
     }
 
+    /**
+     * Increment the byte counter for this timer. This is meant to track the
+     * amount of data processed in the section of code that's being timed,
+     * in order to compute throughput metrics.
+     */
+    void data(uint64 bytes)
+    {
+        bytes_tracked += bytes;
+    }
+
+    /**
+     * Increment the byte counter by the number of bytes in the pointer.
+     * This is meant to track the amount of data processed in the section
+     * of code that's being timed, in order to compute throughput metrics.
+     */
+    template <typename T>
+    void data(pointer<system, T> ptr)
+    {
+        data(ptr.size() * sizeof(T));
+    }
+
+    /**
+     * Stops the timer. Must only be called after start().
+     */
     void stop(void)
     {
         if (!started)
@@ -78,9 +123,60 @@ struct timer
         started = false;
     }
 
+    /**
+     * Returns the elapsed time between start() / stop() calls in seconds.
+     *
+     * Note that for GPU timers, this will wait for all commands prior to the last stop() call to be executed.
+     *
+     * @return  Elapsed time in seconds.
+     */
     float elapsed_time(void)
     {
         return time_counter;
+    }
+
+    /**
+     * Return the throughput value in bytes/s. Throughput is computed
+     * based on the number of bytes that were tracked by the timer.
+     *
+     * @return Throughput value in bytes/second.
+     */
+    float throughput_b(void)
+    {
+        return float(bytes_tracked) / elapsed_time();
+    }
+
+    /**
+     * Return the throughput value in KB/s. Throughput is computed
+     * based on the number of bytes that were tracked by the timer.
+     *
+     * @return Throughput value in KB/second.
+     */
+    float throughput_KB(void)
+    {
+        return throughput_b() / 1024.0;
+    }
+
+    /**
+     * Return the throughput value in MB/s. Throughput is computed
+     * based on the number of bytes that were tracked by the timer.
+     *
+     * @return Throughput value in MB/second.
+     */
+    float throughput_MB(void)
+    {
+        return throughput_KB() / 1024.0;
+    }
+
+    /**
+     * Return the throughput value in GB/s. Throughput is computed
+     * based on the number of bytes that were tracked by the timer.
+     *
+     * @return Throughput value in GB/second.
+     */
+    float throughput_GB(void)
+    {
+        return throughput_MB() / 1024.0;
     }
 };
 
@@ -98,9 +194,13 @@ struct timer<cuda>
     sample_type active_sample;
     bool started;
     float time_counter;
+    uint64 bytes_tracked;
 
     timer()
-        : started(false), time_counter(0.0), retired_events()
+        : retired_events(),
+          started(false),
+          time_counter(0.0),
+          bytes_tracked(0)
     { }
 
     timer(const timer&) = delete;
@@ -142,6 +242,17 @@ struct timer<cuda>
 
 
         started = true;
+    }
+
+    void data(uint64 bytes)
+    {
+        bytes_tracked += bytes;
+    }
+
+    template <typename T>
+    void data(pointer<cuda, T> ptr)
+    {
+        data(ptr.size() * sizeof(T));
     }
 
     void stop(void)
@@ -189,6 +300,27 @@ public:
         flush();
         return time_counter;
     }
+
+    float throughput_b(void)
+    {
+        return float(bytes_tracked) / elapsed_time();
+    }
+
+    float throughput_KB(void)
+    {
+        return throughput_b() / 1024.0;
+    }
+
+    float throughput_MB(void)
+    {
+        return throughput_KB() / 1024.0;
+    }
+
+    float throughput_GB(void)
+    {
+        return throughput_MB() / 1024.0;
+    }
+
 };
 
 } // namespace lift
