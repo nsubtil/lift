@@ -42,13 +42,13 @@ using namespace lift;
 template <target_system system>
 void fill_vector()
 {
-    uint32 size = 1000;
-    int fill_val = 10;
+    constexpr uint32 size = 1000;
+    constexpr int fill_val = 10;
 
     allocation<system, int> data(size);
     parallel<system>::fill(data, fill_val);
 
-    for (int i = 0; i < size; i++)
+    for (uint32 i = 0; i < size; i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == fill_val)
     }
@@ -58,13 +58,13 @@ LIFT_TEST_FUNC(fill_vector_test, fill_vector);
 template <target_system system>
 void fill_input_iter()
 {
-    uint32 size = 1000;
-    int fill_val = 10;
+    constexpr uint32 size = 1000;
+    constexpr int fill_val = 10;
 
     allocation<system, int> data(size);
     parallel<system>::fill(data, fill_val);
 
-    for (int i = 0; i < size; i++)
+    for (uint32 i = 0; i < size; i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == fill_val)
     }
