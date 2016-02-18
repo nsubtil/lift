@@ -38,7 +38,7 @@
 
 using namespace lift;
 
-const uint32 vec_len = 10000;
+constexpr uint32 vec_len = 10000;
 
 template<target_system system, typename d_type>
 struct p_add
