@@ -79,7 +79,7 @@ void for_each_end()
     parallel<system>::fill(data, 0);
     parallel<system>::for_each(data.size(), add<system, int>(data, sub_num));
 
-    for (int i = 0; i < data.size(); i++)
+    for (size_t i = 0; i < data.size(); i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == sub_num)
     }
@@ -95,7 +95,7 @@ void for_each_iter()
     parallel<system>::for_each(data.begin(), data.end(),
                                p_add<system, int>(data, add_num));
 
-    for (int i = 0; i < data.size(); i++)
+    for (size_t i = 0; i < data.size(); i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == add_num)
     }
@@ -110,7 +110,7 @@ void for_each_pointer()
     parallel<system>::fill(data, 0);
     parallel<system>::for_each(data, p_add<system, int>(data, add_num));
 
-    for (int i = 0; i < data.size(); i++)
+    for (size_t i = 0; i < data.size(); i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == add_num)
     }
@@ -126,11 +126,11 @@ void for_each_range()
     parallel<system>::for_each({data.size()/2, data.size()},
                                add<system, int>(data, add_num));
 
-    for (int i = 0; i < data.size()/2; i++)
+    for (size_t i = 0; i < data.size()/2; i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == 0)
     }
-    for (int i = data.size()/2; i < data.size(); i++)
+    for (size_t i = data.size()/2; i < data.size(); i++)
     {
         LIFT_TEST_CHECK(data.peek(i) == add_num)
     }
