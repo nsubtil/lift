@@ -5,6 +5,7 @@ set(test_src
     pointer.cu
     fill.cu
     sort.cu
+    copy_if.cu
     timer.cu)
 
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
