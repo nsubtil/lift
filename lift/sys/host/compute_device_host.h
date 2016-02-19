@@ -88,7 +88,8 @@ struct compute_device_host : public compute_device
     const uint32 num_threads;
 
     compute_device_host(uint32 num_threads = uint32(-1))
-        : num_threads(num_threads), config(__internal::identify_host_cpu())
+        : config(__internal::identify_host_cpu()),
+          num_threads(num_threads)
     {
         if (num_threads == uint32(-1))
             num_threads = config.num_threads;
