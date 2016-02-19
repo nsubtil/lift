@@ -28,6 +28,10 @@
 
 #pragma once
 
+#if !LIFT_CUDA
+#error "parallel.h requires nvcc"
+#endif
+
 #include <iterator>
 
 #include "types.h"

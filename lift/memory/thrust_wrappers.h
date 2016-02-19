@@ -31,6 +31,10 @@
 
 #pragma once
 
+#if !LIFT_CUDA
+#error "thrust_wrappers.h requires nvcc"
+#endif
+
 #include "../types.h"
 #include "../backends.h"
 

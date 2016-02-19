@@ -31,6 +31,8 @@
 
 #pragma once
 
+#include <iterator>
+
 namespace lift {
 
 template <typename T, uint32 stride, typename IndexType = uint64>
@@ -38,14 +40,14 @@ struct strided_iterator
 {
     typedef T*                                                          iterator;
     typedef const T*                                                    const_iterator;
-    typedef typename thrust::iterator_traits<iterator>::value_type      value_type;
-    typedef typename thrust::iterator_traits<iterator>::reference       reference;
-    typedef typename thrust::iterator_traits<const_iterator>::reference const_reference;
-    typedef typename thrust::iterator_traits<iterator>::pointer         pointer;
-    typedef typename thrust::iterator_traits<const_iterator>::pointer   const_pointer;
-    typedef typename thrust::reverse_iterator<iterator>                 reverse_iterator;
-    typedef typename thrust::reverse_iterator<const_iterator>           const_reverse_iterator;
-    typedef typename thrust::iterator_traits<iterator>::difference_type difference_type;
+    typedef typename std::iterator_traits<iterator>::value_type         value_type;
+    typedef typename std::iterator_traits<iterator>::reference          reference;
+    typedef typename std::iterator_traits<const_iterator>::reference    const_reference;
+    typedef typename std::iterator_traits<iterator>::pointer            pointer;
+    typedef typename std::iterator_traits<const_iterator>::pointer      const_pointer;
+    typedef typename std::reverse_iterator<iterator>                    reverse_iterator;
+    typedef typename std::reverse_iterator<const_iterator>              const_reverse_iterator;
+    typedef typename std::iterator_traits<iterator>::difference_type    difference_type;
     typedef IndexType                                                   size_type;
 
     LIFT_HOST_DEVICE

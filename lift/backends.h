@@ -41,13 +41,10 @@ enum target_system
 
 } // namespace lift
 
-#if defined(__CUDACC__)
+#if LIFT_CUDA
 
 #include <thrust/device_vector.h>
-
 #include <thrust/system/cuda/vector.h>
-
-#endif
 
 #include <thrust/system/tbb/vector.h>
 #include <thrust/execution_policy.h>
@@ -83,10 +80,18 @@ struct backend_policy<host>
 
 } // namespace lift
 
+#endif // LIFT_CUDA
+
 // ugly macro hackery to force arbitrary device function / method instantiation
 // note: we intentionally never instantiate device functions for the host system
+
+#if LIFT_CUDA
 #define __FUNC_CUDA(fun) void *ptr_cuda = (void *)fun<lift::cuda>;
 #define __METHOD_CUDA(base, method) void *ptr_cuda = (void *)&base<lift::cuda>::method;
+#else
+#define __FUNC_CUDA(fun)
+#define __METHOD_CUDA(base, method)
+#endif
 
 #define __FUNC_TBB(fun) auto *ptr_TBB= (void *)fun<lift::host>;
 #define __METHOD_TBB(base, method) auto ptr_TBB = (void *)&base<lift::host>::method;

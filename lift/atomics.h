@@ -45,4 +45,7 @@ struct atomics
 } // namespace lift
 
 #include "atomics_host.inl"
+
+#if LIFT_CUDA
 #include "atomics_cuda.inl"
+#endif

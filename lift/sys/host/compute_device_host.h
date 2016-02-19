@@ -32,6 +32,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include <lift/types.h>
 #include <lift/sys/compute_device.h>
