@@ -39,10 +39,7 @@
 #include <lift/backends.h>
 #include <lift/decorators.h>
 
-#if LIFT_CUDA
 #include <lift/memory/thrust_wrappers.h>
-#endif
-
 #include <lift/memory/type_assignment_checks.h>
 
 namespace lift {
@@ -79,11 +76,9 @@ struct tagged_pointer_base
     typedef T*                                         iterator_type;
     typedef const T*                                   const_iterator_type;
 
-#if LIFT_CUDA
     /// Thrust-compatible iterator types
     typedef thrust_iterator_adaptor<system, value_type, iterator_type>         thrust_iterator_type;
     typedef thrust_iterator_adaptor<system, value_type, const_iterator_type>   thrust_const_iterator_type;
-#endif
 
     /// The default constructor initializes the pointer to null
     LIFT_HOST_DEVICE tagged_pointer_base()
@@ -212,7 +207,6 @@ struct tagged_pointer_base
         return const_iterator_type(storage + storage_size);
     }
 
-#if LIFT_CUDA
     /// Returns a Thrust-compatible iterator pointing at the base address of the pointer
     LIFT_HOST_DEVICE thrust_const_iterator_type t_begin() const
     {
@@ -238,7 +232,6 @@ struct tagged_pointer_base
     {
         return thrust_iterator_type(storage + storage_size);
     }
-#endif
 
     // TODO: reverse iterators?
 

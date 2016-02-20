@@ -42,9 +42,9 @@ enum target_system
 } // namespace lift
 
 #if LIFT_CUDA
-
 #include <thrust/device_vector.h>
 #include <thrust/system/cuda/vector.h>
+#endif // LIFT_CUDA
 
 #include <thrust/system/tbb/vector.h>
 #include <thrust/execution_policy.h>
@@ -56,6 +56,7 @@ struct backend_policy
 { };
 
 
+#if LIFT_CUDA
 template <>
 struct backend_policy<cuda>
 {
@@ -66,6 +67,7 @@ struct backend_policy<cuda>
         return thrust::cuda::par;
     }
 };
+#endif // LIFT_CUDA
 
 template <>
 struct backend_policy<host>
@@ -80,8 +82,6 @@ struct backend_policy<host>
 
 } // namespace lift
 
-#endif // LIFT_CUDA
-
 // ugly macro hackery to force arbitrary device function / method instantiation
 // note: we intentionally never instantiate device functions for the host system
 
@@ -91,7 +91,7 @@ struct backend_policy<host>
 #else
 #define __FUNC_CUDA(fun)
 #define __METHOD_CUDA(base, method)
-#endif
+#endif // LIFT_CUDA
 
 #define __FUNC_TBB(fun) auto *ptr_TBB= (void *)fun<lift::host>;
 #define __METHOD_TBB(base, method) auto ptr_TBB = (void *)&base<lift::host>::method;
