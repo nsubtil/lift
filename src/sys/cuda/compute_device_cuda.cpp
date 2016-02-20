@@ -29,11 +29,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lift/types.h>
-#include <lift/sys/cuda/compute_device_cuda.h>
+#include <string.h>
 
 #include <string>
 #include <vector>
+
+#include <lift/types.h>
+#include <lift/sys/cuda/compute_device_cuda.h>
 
 namespace lift {
 

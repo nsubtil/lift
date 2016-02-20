@@ -34,6 +34,8 @@
 #include <vector>
 #include <string>
 
+#include <cuda_runtime.h>
+
 #include <lift/sys/compute_device.h>
 
 namespace lift {

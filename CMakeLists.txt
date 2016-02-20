@@ -46,11 +46,12 @@ endforeach(ARCH)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if (USE_EXTERNAL_THRUST)
+# xxxnsubtil: https://github.com/nsubtil/lift/issues/60
+#if (USE_EXTERNAL_THRUST)
     # inject our Thrust include path to override the CUDA toolkit include path
     # (this is a bit of a hack)
-    set(CUDA_INCLUDE_DIRS ${thrust_INCLUDE} -I${CUDA_INCLUDE_DIRS})
-endif()
+#    set(CUDA_INCLUDE_DIRS ${thrust_INCLUDE} -I${CUDA_INCLUDE_DIRS})
+#endif()
 
 # set cuda debug flags
 if (CMAKE_BUILD_TYPE MATCHES "Debug")

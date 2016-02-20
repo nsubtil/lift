@@ -33,6 +33,8 @@
 
 #include <stack>
 
+#include <cuda_runtime.h>
+
 namespace lift {
 
 /**
@@ -183,9 +185,6 @@ struct timer
 template <>
 struct timer<cuda>
 {
-#if !LIFT_CUDA
-    static_assert(false, "lift::timer<cuda> requires nvcc");
-#else
     typedef struct
     {
         cudaEvent_t start;
@@ -323,7 +322,6 @@ public:
     {
         return throughput_MB() / 1024.0;
     }
-#endif
 };
 
 } // namespace lift
