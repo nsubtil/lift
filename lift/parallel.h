@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <lift/decorators.h>
+
 #if !LIFT_CUDA
 #error "parallel.h requires nvcc"
 #endif
