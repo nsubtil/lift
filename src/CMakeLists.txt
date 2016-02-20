@@ -6,8 +6,8 @@ cuda_add_library(lift ${lift_lib_sources})
 add_dependencies(lift tbb)
 
 set(lift_test_lib_sources
-    test/entrypoint.cu
-    test/random.cu
-    test/test_list.cu)
+    test/entrypoint.cpp
+    test/random.cpp
+    test/test_list.cpp)
 
 cuda_add_library(liftest-lib ${lift_test_lib_sources} EXCLUDE_FROM_ALL)
