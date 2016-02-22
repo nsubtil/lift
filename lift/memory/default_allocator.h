@@ -47,13 +47,15 @@ struct default_memory_allocator
 template <>
 struct default_memory_allocator<cuda>
 {
-    typedef cuda_allocator type;
+    typedef cuda_allocator allocator_type;
+    typedef cuda_suballocator suballocator_type;
 };
 
 template <>
 struct default_memory_allocator<host>
 {
-    typedef malloc_allocator type;
+    typedef malloc_allocator allocator_type;
+    typedef malloc_allocator suballocator_type;
 };
 
 } // namespace lift

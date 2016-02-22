@@ -43,7 +43,7 @@ namespace lift {
 template <target_system system,
           typename T,
           typename index_type = uint32,
-          typename allocator = typename default_memory_allocator<system>::type>
+          typename allocator = typename default_memory_allocator<system>::allocator_type>
 struct scoped_allocation : public persistent_allocation<system, T, index_type, allocator>
 {
     typedef persistent_allocation<system, T, index_type, allocator> base;
@@ -54,5 +54,11 @@ struct scoped_allocation : public persistent_allocation<system, T, index_type, a
         base::free();
     }
 };
+
+template <target_system system,
+          typename T,
+          typename index_type = uint32,
+          typename allocator = typename default_memory_allocator<system>::suballocator_type>
+using scoped_suballocation = scoped_allocation<system, T, index_type, allocator>;
 
 } // namespace lift

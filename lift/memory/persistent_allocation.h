@@ -31,14 +31,14 @@
 
 #pragma once
 
-#include "../types.h"
-#include "../backends.h"
-#include "../decorators.h"
+#include <lift/types.h>
+#include <lift/backends.h>
+#include <lift/decorators.h>
 
-#include "default_allocator.h"
-#include "pointer.h"
-#include "allocation.h"
-#include "type_assignment_checks.h"
+#include <lift/memory/default_allocator.h>
+#include <lift/memory/pointer.h>
+#include <lift/memory/allocation.h>
+#include <lift/memory/type_assignment_checks.h>
 
 namespace lift {
 
@@ -47,7 +47,7 @@ namespace lift {
 template <target_system system,
           typename T,
           typename _index_type = uint32,
-          typename allocator = typename default_memory_allocator<system>::type>
+          typename allocator = typename default_memory_allocator<system>::allocator_type>
 struct persistent_allocation : public allocation<system, T, _index_type>
 {
     typedef allocation<system, T, _index_type> base;
@@ -201,5 +201,11 @@ struct persistent_allocation : public allocation<system, T, _index_type>
 protected:
     size_type storage_capacity;
 };
+
+template <target_system system,
+          typename T,
+          typename index_type = uint32,
+          typename allocator = typename default_memory_allocator<system>::suballocator_type>
+using persistent_suballocation = persistent_allocation<system, T, index_type, allocator>;
 
 } // namespace lift
