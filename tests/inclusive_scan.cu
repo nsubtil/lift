@@ -57,7 +57,7 @@ void inclusive_scan_test()
     parallel<system>::inclusive_scan(data_in.begin(), data_in.size(), data_out.begin(), addition_predicate());
 
     long sum = 0, expected = 0;
-    for (int i = 0; i < data_out.size(); i++)
+    for (uint32 i = 0; i < data_out.size(); i++)
     {
         sum += data_out.peek(i);
         expected += (i + 1);
