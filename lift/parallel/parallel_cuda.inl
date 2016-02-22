@@ -30,23 +30,20 @@
 
 #define WAR_CUB_COPY_FLAGGED 1
 
+// silence warnings from cub
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_select.cuh>
 #include <cub/device/device_run_length_encode.cuh>
-// silence warnings from debug code in cub
-#ifdef __GNU_C__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-
 #include <cub/device/device_radix_sort.cuh>
 
-#ifdef __GNU_C__
 #pragma GCC diagnostic pop
-#endif
 
-#include "../types.h"
-#include "../algorithms/cuda/for_each.h"
+#include <lift/types.h>
+#include <lift/algorithms/cuda/for_each.h>
 
 namespace lift {
 
