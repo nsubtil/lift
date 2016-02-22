@@ -33,6 +33,8 @@
 
 namespace lift {
 
+#include <lift/decorators.h>
+
 enum target_system
 {
     host,
