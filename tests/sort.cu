@@ -84,10 +84,60 @@ static void sort_test_run(size_t size)
     }
 }
 
+template <target_system system>
+static void sort_test_sb_tmp_run(size_t size)
+{
+    scoped_allocation<system, uint32> keys;
+    scoped_allocation<host, uint32> expected_output;
+
+    scoped_allocation<system, uint32> temp_keys;
+
+    generate_test_vector(keys, expected_output, size);
+
+    parallel<system>::sort(keys, temp_keys);
+    parallel<system>::synchronize();
+    parallel<system>::check_errors();
+
+    scoped_allocation<host, uint32> h_keys;
+    h_keys.copy(keys);
+
+    for(size_t i = 0; i < h_keys.size(); i++)
+    {
+        LIFT_TEST_CHECK(h_keys[i] == expected_output[i]);
+    }
+}
+
+template <target_system system>
+static void sort_test_sb_tmp_key_run(size_t size)
+{
+    scoped_allocation<system, uint32> keys;
+    scoped_allocation<host, uint32> expected_output;
+
+    generate_test_vector(keys, expected_output, size);
+
+    parallel<system>::sort(keys);
+    parallel<system>::synchronize();
+    parallel<system>::check_errors();
+
+    scoped_allocation<host, uint32> h_keys;
+    h_keys.copy(keys);
+
+    for(size_t i = 0; i < h_keys.size(); i++)
+    {
+        LIFT_TEST_CHECK(h_keys[i] == expected_output[i]);
+    }
+}
+
 #define SORT_TEST_GEN(__size__) \
     template <target_system system> \
-    static void sort_test_##__size__##_run(void) { sort_test_run<system>(__size__); } \
-    LIFT_TEST_FUNC(sort_test_##__size__, sort_test_##__size__##_run)
+    static void sort_test_##__size__##_run(void) { sort_test_run<system>(size_t(__size__)); } \
+    LIFT_TEST_FUNC(sort_test_##__size__, sort_test_##__size__##_run); \
+    template <target_system system> \
+    static void sort_test_sb_tmp_##__size__##_run(void) { sort_test_sb_tmp_run<system>(size_t(__size__)); } \
+    LIFT_TEST_FUNC(sort_test_sb_tmp_##__size__, sort_test_sb_tmp_##__size__##_run); \
+    template <target_system system> \
+    static void sort_test_sb_tmp_key_##__size__##_run(void) { sort_test_sb_tmp_key_run<system>(size_t(__size__)); } \
+    LIFT_TEST_FUNC(sort_test_sb_tmp_key_##__size__, sort_test_sb_tmp_key_##__size__##_run);
 
 SORT_TEST_GEN(100);
 SORT_TEST_GEN(1000);
@@ -100,6 +150,8 @@ static void sort_test_shmoo_run(size_t start_size, size_t end_size, size_t step)
     for(size_t size = start_size; size <= end_size; size += step)
     {
         sort_test_run<system>(size);
+        sort_test_sb_tmp_run<system>(size);
+        sort_test_sb_tmp_key_run<system>(size);
     }
 }
 

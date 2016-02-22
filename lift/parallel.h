@@ -241,11 +241,34 @@ struct parallel
      * \param keys              Pointer to the buffer containing the keys to be sorted.
      * \param temp_keys         Pointer to a temporary buffer to hold keys during sorting. Will be
      *                          resized to match the size of \c keys .
+     * \param temp_storage      Temporary storage for use by the implementation. Will be resized
+     *                          if too small.
      */
     template <typename Key>
     static inline void sort(allocation<system, Key>& keys,
                             allocation<system, Key>& temp_keys,
                             allocation<system, uint8>& temp_storage);
+
+    /**
+     * Overload of sort with automatically managed temporary storage.
+     */
+    template <typename Key>
+    static inline void sort(allocation<system, Key>& keys,
+                            allocation<system, Key>& temp_keys)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return sort(keys, temp_keys, temp_storage);
+    }
+
+    /**
+     * Overload of sort with automatically managed temporary storage and temporary key storage.
+     */
+    template <typename Key>
+    static inline void sort(allocation<system, Key>& keys)
+    {
+        scoped_suballocation<system, Key> temp_keys;
+        return sort(keys, temp_keys);
+    }
 
     /**
      * Perform a reduction by key on a key/value buffer pair.
