@@ -65,9 +65,6 @@ struct timer
           bytes_tracked(0)
     { }
 
-    /// Copy constructor is deleted to prevent GPU timers from being moved to device.
-    timer(const timer&) = delete;
-
     /**
      * Starts the timer. Must be followed by a stop() call.
      */
