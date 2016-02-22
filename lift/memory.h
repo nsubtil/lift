@@ -31,9 +31,12 @@
 
 #pragma once
 
-#include "memory/pointer.h"
-#include "memory/allocation.h"
-#include "memory/persistent_allocation.h"
-#include "memory/scoped_allocation.h"
-#include "memory/scoped_free.h"
-#include "memory/ldg_wrapper.h"
+#include <lift/memory/pointer.h>
+#include <lift/memory/allocation.h>
+#include <lift/memory/persistent_allocation.h>
+#include <lift/memory/scoped_allocation.h>
+#include <lift/memory/scoped_free.h>
+
+#if LIFT_CUDA
+#include <lift/memory/ldg_wrapper.h>
+#endif

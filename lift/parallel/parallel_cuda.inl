@@ -30,23 +30,20 @@
 
 #define WAR_CUB_COPY_FLAGGED 1
 
+// silence warnings from cub
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_select.cuh>
 #include <cub/device/device_run_length_encode.cuh>
-// silence warnings from debug code in cub
-#ifdef __GNU_C__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-
 #include <cub/device/device_radix_sort.cuh>
 
-#ifdef __GNU_C__
 #pragma GCC diagnostic pop
-#endif
 
-#include "../types.h"
-#include "../algorithms/cuda/for_each.h"
+#include <lift/types.h>
+#include <lift/algorithms/cuda/for_each.h>
 
 namespace lift {
 
@@ -111,15 +108,15 @@ inline void parallel<cuda>::for_each(uint32 end,
 }
 
 template <typename T>
-struct fill_by_reference
+struct fill_by_reference_cuda
 {
     T value;
 
-    fill_by_reference(T value)
+    fill_by_reference_cuda(T value)
         : value(value)
     { }
 
-    LIFT_HOST_DEVICE void operator() (T &ref)
+    LIFT_DEVICE void operator() (T &ref)
     {
         ref = value;
     }
@@ -131,7 +128,7 @@ inline void parallel<cuda>::fill(InputIterator begin,
                                  InputIterator end,
                                  T value)
 {
-    for_each(begin, end, fill_by_reference<T>(value));
+    for_each(begin, end, fill_by_reference_cuda<T>(value));
 }
 
 template <>
@@ -139,7 +136,7 @@ template <typename T>
 inline void parallel<cuda>::fill(pointer<cuda, T>& vector,
                                  T value)
 {
-    for_each(vector, fill_by_reference<T>(value));
+    for_each(vector, fill_by_reference_cuda<T>(value));
 }
 
 template <>

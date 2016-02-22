@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "../types.h"
-#include "../backends.h"
+#include <lift/types.h>
+#include <lift/backends.h>
 
 #include <thrust/iterator/iterator_adaptor.h>
 

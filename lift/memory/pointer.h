@@ -31,12 +31,16 @@
 
 #pragma once
 
-#include "../types.h"
-#include "../backends.h"
-#include "../decorators.h"
+#include <cuda_runtime.h>
 
-#include "thrust_wrappers.h"
-#include "type_assignment_checks.h"
+#include <initializer_list>
+
+#include <lift/types.h>
+#include <lift/backends.h>
+#include <lift/decorators.h>
+
+#include <lift/memory/thrust_wrappers.h>
+#include <lift/memory/type_assignment_checks.h>
 
 namespace lift {
 

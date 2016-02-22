@@ -31,7 +31,8 @@
 
 #pragma once
 
-#include "pointer.h"
+#include <lift/decorators.h>
+#include <lift/memory/pointer.h>
 
 namespace lift {
 
@@ -51,10 +52,14 @@ struct __ldg_loader<host, T>
 template <typename T>
 struct __ldg_loader<cuda, T>
 {
+#if !LIFT_CUDA
+    static_assert(false, "__ldg_loader<cuda> requires nvcc");
+#else
     LIFT_HOST_DEVICE static inline T load(const T* pointer)
     {
         return __ldg(pointer);
     }
+#endif
 };
 
 // wrap a read-only memory pointer and access it through __ldg() on the GPU

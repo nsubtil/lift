@@ -41,6 +41,12 @@
 #define LIFT_DEVICE
 #endif
 
+#if defined(__CUDACC__)
+#define LIFT_CUDA 1
+#else
+#define LIFT_CUDA 0
+#endif
+
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 0
 #define LIFT_DEVICE_COMPILATION 1
 #else

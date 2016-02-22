@@ -30,11 +30,10 @@
 
 #include <iterator>
 
-#include "types.h"
-
-#include "decorators.h"
-#include "backends.h"
-#include "memory.h"
+#include <lift/types.h>
+#include <lift/decorators.h>
+#include <lift/backends.h>
+#include <lift/memory.h>
 
 namespace lift {
 
@@ -395,5 +394,8 @@ struct parallel
 
 } // namespace lift
 
+#if LIFT_CUDA
 #include "parallel/parallel_cuda.inl"
+#endif // LIFT_CUDA
+
 #include "parallel/parallel_host.inl"

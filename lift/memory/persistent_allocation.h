@@ -38,7 +38,6 @@
 #include "default_allocator.h"
 #include "pointer.h"
 #include "allocation.h"
-#include "thrust_wrappers.h"
 #include "type_assignment_checks.h"
 
 namespace lift {
