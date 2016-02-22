@@ -111,15 +111,15 @@ inline void parallel<cuda>::for_each(uint32 end,
 }
 
 template <typename T>
-struct fill_by_reference
+struct fill_by_reference_cuda
 {
     T value;
 
-    fill_by_reference(T value)
+    fill_by_reference_cuda(T value)
         : value(value)
     { }
 
-    LIFT_HOST_DEVICE void operator() (T &ref)
+    LIFT_DEVICE void operator() (T &ref)
     {
         ref = value;
     }
@@ -131,7 +131,7 @@ inline void parallel<cuda>::fill(InputIterator begin,
                                  InputIterator end,
                                  T value)
 {
-    for_each(begin, end, fill_by_reference<T>(value));
+    for_each(begin, end, fill_by_reference_cuda<T>(value));
 }
 
 template <>
@@ -139,7 +139,7 @@ template <typename T>
 inline void parallel<cuda>::fill(pointer<cuda, T>& vector,
                                  T value)
 {
-    for_each(vector, fill_by_reference<T>(value));
+    for_each(vector, fill_by_reference_cuda<T>(value));
 }
 
 template <>

@@ -31,6 +31,11 @@
 
 #pragma once
 
+#include <string.h>
+#include <algorithm>
+
+#include <cuda_runtime.h>
+
 #include <lift/types.h>
 #include <lift/backends.h>
 #include <lift/decorators.h>
