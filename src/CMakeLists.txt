@@ -1,5 +1,6 @@
 set(lift_lib_sources
     sys/cuda/compute_device_cuda.cpp
+    sys/cuda/cuda_context.cpp
     sys/host/x86_64/x86_64_cpuid.cpp)
 
 cuda_add_library(lift ${lift_lib_sources})
