@@ -34,6 +34,7 @@
 #include <lift/backends.h>
 #include <lift/types.h>
 #include <lift/sys/cuda/compute_device_cuda.h>
+#include <lift/sys/cuda/suballocator.h>
 
 #include <map>
 
@@ -60,7 +61,7 @@ struct cuda_context
     cudaStream_t active_cuda_stream;
 
     // suballocator for this device
-    cub::CachingDeviceAllocator default_suballocator;
+    CachingDeviceAllocator default_suballocator;
 
     cuda_context(int device)
         : device(device),
