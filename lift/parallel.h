@@ -160,6 +160,24 @@ struct parallel
                                  Predicate op,
                                  allocation<system, uint8>& temp_storage);
 
+    /**
+     * Performs stream compaction based on a predicate.
+     *
+     * \c copy_if copies every element in the input buffer for which \c Predicate evaluates to true
+     * into the output buffer.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam InputIterator    Type of the input data iterator.
+     * \tparam OutputIterator   Type of the output data iterator.
+     *
+     * \param first             Iterator to the start of the input buffer.
+     * \param len               Number of elements in the input buffer.
+     * \param result            Iterator to the start of the output buffer.
+     * \param op                Determines whether each element is copied. Called with a single
+     *                          argument (a copy of or reference to the input element), returns
+     *                          a boolean value that determines whether each element is copied.
+     */
     template <typename InputIterator, typename OutputIterator, typename Predicate>
     static inline size_t copy_if(InputIterator first,
                                  size_t len,
@@ -197,6 +215,35 @@ struct parallel
                                       allocation<system, uint8>& temp_storage);
 
     /**
+     * Performs stream compaction based on a buffer with boolean flags.
+     *
+     * \c copy_flagged copies every element in the input buffer for which the corresponding index
+     * in the flags buffer is true.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam InputIterator    Type of the input data iterator.
+     * \tparam FlagIterator     Type of the input flags iterator.
+     * \tparam OutputIterator   Type of the output data iterator.
+     *
+     * \param first             Iterator to the start of the input buffer.
+     * \param len               Number of elements in the input buffer.
+     * \param result            Iterator to the start of the output buffer.
+     * \param flags             Determines whether each element is copied. For a given index, the
+     *                          element data at that index in the input buffer is copied if and only
+     *                          if the flag at the same index evaluates to true.
+     */
+    template <typename InputIterator, typename FlagIterator, typename OutputIterator>
+    static inline size_t copy_flagged(InputIterator first,
+                                      size_t len,
+                                      OutputIterator result,
+                                      FlagIterator flags)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return copy_flagged(first, len, result, flags, temp_storage);
+    }
+
+    /**
      * Computes the arithmetic sum of a buffer.
      *
      * \c sum performs a reduction using the '+' operator on the input data and '0' as the initial
@@ -214,12 +261,62 @@ struct parallel
                            size_t len,
                            allocation<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
+    /**
+     * Computes the arithmetic sum of a buffer.
+     *
+     * \c sum performs a reduction using the '+' operator on the input data and '0' as the initial
+     * value for the reduction. This works on any integral data type.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam InputIterator    Type of the input data iterator.
+     *
+     * \param first             Iterator to the start of the input buffer.
+     * \param len               Length of the input buffer.
+     */
     template <typename InputIterator>
     static inline auto sum(InputIterator first,
                            size_t len) -> typename std::iterator_traits<InputIterator>::value_type
     {
         scoped_suballocation<system, uint8> temp_allocation;
-        sum(first, len, temp_allocation);
+        return sum(first, len, temp_allocation);
+    }
+
+    /**
+     * Computes the arithmetic sum of a buffer.
+     *
+     * \c sum performs a reduction using the '+' operator on the input data and '0' as the initial
+     * value for the reduction. This works on any integral data type.
+     *
+     * \tparam T                Type of the input data.
+     *
+     * \param data              Pointer to the memory region containing the elements to sum
+     * \param temp_storage      Temporary storage for use by the implementation. Will be resized
+     *                          if too small.
+     */
+    template <typename T>
+    static inline auto sum(const pointer<system, T>& data,
+                           allocation<system, uint8>& temp_storage) -> T
+    {
+        return sum(data.begin(), data.size(), temp_storage);
+    }
+
+    /**
+     * Computes the arithmetic sum of a buffer.
+     *
+     * \c sum performs a reduction using the '+' operator on the input data and '0' as the initial
+     * value for the reduction. This works on any integral data type.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam T                Type of the input data.
+     *
+     * \param data              Pointer to the memory region containing the elements to sum
+     */
+    template <typename T>
+    static inline auto sum(const pointer<system, T>& data) -> T
+    {
+        return sum(data.begin(), data.size());
     }
 
     /**
@@ -249,6 +346,25 @@ struct parallel
                                    allocation<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
+    /**
+     * Perform a sort-by-key on a key + value buffer pair.
+     *
+     * \c sort_by_key sorts \c keys and \c values by ascending order of keys. In other words, it
+     * permutes the contents of \c keys such that they are in ascending order and applies the same
+     * permutation to the contents of \c values.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam Key              Data type for the keys
+     * \tparam Value            Data type for the values
+     *
+     * \param keys              Pointer to the buffer containing the keys to be sorted.
+     * \param values            Pointer to the buffer containing the values to be sorted.
+     * \param temp_keys         Pointer to a temporary buffer to hold keys during sorting. Will be
+     *                          resized to match the size of \c keys .
+     * \param temp_values       Pointer to a temporary buffer to hold values during sorting. Will
+     *                          be resized to match the size of \c values .
+     */
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<system, Key>& keys,
                                    pointer<system, Value>& values,
@@ -260,6 +376,22 @@ struct parallel
         sort_by_key(keys, values, temp_keys, temp_values, temp_storage, num_key_bits);
     }
 
+    /**
+     * Perform a sort-by-key on a key + value buffer pair.
+     *
+     * \c sort_by_key sorts \c keys and \c values by ascending order of keys. In other words, it
+     * permutes the contents of \c keys such that they are in ascending order and applies the same
+     * permutation to the contents of \c values.
+     *
+     * Temporary storage as well as storage for intermediate key/value buffers is obtained
+     * through a per-GPU suballocator.
+     *
+     * \tparam Key              Data type for the keys
+     * \tparam Value            Data type for the values
+     *
+     * \param keys              Pointer to the buffer containing the keys to be sorted.
+     * \param values            Pointer to the buffer containing the values to be sorted.
+     */
     template <typename Key, typename Value>
     static inline void sort_by_key(pointer<system, Key>& keys,
                                    pointer<system, Value>& values,
@@ -289,7 +421,17 @@ struct parallel
                             allocation<system, uint8>& temp_storage);
 
     /**
-     * Overload of sort with automatically managed temporary storage.
+     * Sort a buffer of keys.
+     *
+     * \c sort sorts the contents of \c keys into ascending order.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam Key              Data type for the keys.
+     *
+     * \param keys              Pointer to the buffer containing the keys to be sorted.
+     * \param temp_keys         Pointer to a temporary buffer to hold keys during sorting. Will be
+     *                          resized to match the size of \c keys .
      */
     template <typename Key>
     static inline void sort(allocation<system, Key>& keys,
@@ -300,7 +442,16 @@ struct parallel
     }
 
     /**
-     * Overload of sort with automatically managed temporary storage and temporary key storage.
+     * Sort a buffer of keys.
+     *
+     * \c sort sorts the contents of \c keys into ascending order.
+     *
+     * Temporary storage as well as storage for the intermediate key buffer is obtained
+     * through a per-GPU suballocator.
+     *
+     * \tparam Key              Data type for the keys.
+     *
+     * \param keys              Pointer to the buffer containing the keys to be sorted.
      */
     template <typename Key>
     static inline void sort(allocation<system, Key>& keys)
@@ -342,6 +493,30 @@ struct parallel
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
+    /**
+     * Perform a reduction by key on a key/value buffer pair.
+     *
+     * \c reduce_by_key performs per-key reduction on a key/value buffer. For each set of consecutve
+     * identical keys in [\c keys_begin, \c keys_end [, the corresponding values are reduced into a
+     * single output value by applying a user-specified reduction operator.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam KeyIterator      Type of the key iterator
+     * \tparam ValueIterator    Type of the value iterator
+     * \tparam ReductionOp      Type of the reduction operator --- any callable object that can
+     *                          be called with two elements from the value buffer and returns the
+     *                          result of reducing those two elements.
+     *
+     * \param keys_begin        Iterator pointing at the start of the input key buffer
+     * \param keys_end          Iterator pointing at the end of the input key buffer
+     * \param values_begin      Iterator pointing at the start of the input value buffer
+     * \param output_keys       Iterator pointing at the start of the output key buffer
+     * \param output_values     Iterator pointing at the start of the output value buffer
+     * \param reduction_op      The reduction operator.
+     *
+     * \return                  The number of keys/values in the output buffers
+     */
     template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
     static inline size_t reduce_by_key(KeyIterator keys_begin,
                                        KeyIterator keys_end,
@@ -397,6 +572,35 @@ struct parallel
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
+    /**
+     * Perform a reduction by key on a key/value buffer pair.
+     *
+     * \c reduce_by_key performs per-key reduction on a key/value buffer. For each set of consecutve
+     * identical keys in [\c keys_begin, \c keys_end [, the corresponding values are reduced into a
+     * single output value by applying a user-specified reduction operator.
+     *
+     * Note that the output buffers are resized to match the input size, but the number of elements
+     * actually output (the return value from this function) is likely going to be smaller than
+     * that. This aims to prevent reallocations that may shrink buffers which are intended to be
+     * reused many times on the same amount of input data.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam Key              Data type for the keys
+     * \tparam Value            Data type for the values
+     * \tparam ReductionOp      Type of the reduction operator --- any callable object that can
+     *                          be called with two elements from the value buffer and returns the
+     *                          result of reducing those two elements.
+     *
+     * \param keys              Pointer to the buffer containing input keys
+     * \param values            Pointer to the buffer containing input values
+     * \param output_keys       Buffer for output keys. Will be resized to match the size of the
+     *                          input buffer.
+     * \param output_values     Iterator pointing at the start of the output value buffer.
+     * \param reduction_op      The reduction operator.
+     *
+     * \return                  The number of keys/values in the output buffers
+     */
     template <typename Key, typename Value, typename ReductionOp>
     static inline size_t reduce_by_key(pointer<system, Key>& keys,
                                        pointer<system, Value>& values,
@@ -413,8 +617,6 @@ struct parallel
                              reduction_op);
     }
 
-    // computes a run length encoding
-    // returns the number of runs
     /**
      * Compute a run-length encoding of the input key buffer.
      *
@@ -435,6 +637,8 @@ struct parallel
      *                              must be the same size as the input.
      * \param run_lengths_output    Iterator to the start of the output buffer for run lengths. The
      *                              buffer must be the same size (in elements) as the input.
+     * \param temp_storage          Temporary storage for use by the implementation. Will be resized
+     *                              if too small.
      *
      * \return                      The number of key/length pairs generated in the output buffers.
      */
@@ -445,6 +649,31 @@ struct parallel
                                            LengthOutputIterator run_lengths_output,
                                            allocation<system, uint8>& temp_storage);
 
+    /**
+     * Compute a run-length encoding of the input key buffer.
+     *
+     * \c run_length_encode computes the lenght of runs of identical keys in \c keys_input. It
+     * outputs a key/value pair for each run of consecutive, identical keys in \c keys_input, where
+     * the value contains the run length.
+     *
+     * It is conceptually identical to calling \c reduce_by_key where all values are equal to 1.
+     *
+     * Temporary storage is obtained through a per-GPU suballocator.
+     *
+     * \tparam InputIterator        Type of the input key iterator
+     * \tparam UniqueOutputIterator Type of the output key iterator
+     * \tparam LengthOutputIterator Type of the output iterator for run lengths. The underlying type
+     *                              for this iterator must be an integer type.
+     *
+     * \param keys_input            Iterator to the start of the input buffer
+     * \param num_keys              Number of keys in the input buffer
+     * \param unique_keys_output    Iterator to the start of the output buffer for keys. The buffer
+     *                              must be the same size as the input.
+     * \param run_lengths_output    Iterator to the start of the output buffer for run lengths. The
+     *                              buffer must be the same size (in elements) as the input.
+     *
+     * \return                      The number of key/length pairs generated in the output buffers.
+     */
     template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
     static inline size_t run_length_encode(InputIterator keys_input,
                                            size_t num_keys,
