@@ -29,33 +29,80 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <lift/sys/cuda/cuda_context.h>
+#include <lift/backends.h>
 
-#include "../types.h"
-#include "../backends.h"
-#include "../decorators.h"
+#include <map>
+#include <mutex>
+#include <thread>
 
-#include "cuda_allocator.h"
-#include "malloc_allocator.h"
+#include <cuda_runtime.h>
 
 namespace lift {
+namespace __internal {
 
-template <target_system system>
-struct default_memory_allocator
-{ };
+static std::map<int, cuda_context *> gpu_context_array;
+static std::mutex gpu_context_array_mutex;
+static thread_local cuda_context *cached_gpu_context = nullptr;
 
-template <>
-struct default_memory_allocator<cuda>
+void cuda_context::set_stream(uint32 stream_id)
 {
-    typedef cuda_allocator allocator_type;
-    typedef cuda_suballocator suballocator_type;
-};
+    if (stream_map.find(stream_id) == stream_map.end())
+    {
+        cudaStream_t stream;
+        cudaStreamCreate(&stream);
+        stream_map[stream_id] = stream;
+    }
 
-template <>
-struct default_memory_allocator<host>
+    active_cuda_stream = stream_map[stream_id];
+    active_lift_stream = stream_id;
+}
+
+uint32 cuda_context::get_stream(void) const
 {
-    typedef malloc_allocator allocator_type;
-    typedef malloc_allocator suballocator_type;
-};
+    return active_lift_stream;
+}
+
+void *cuda_context::suballocate(size_t len)
+{
+    void *ret;
+    default_suballocator.DeviceAllocate(device, &ret, len, active_cuda_stream);
+    return ret;
+}
+
+void cuda_context::free_suballocation(const void *ptr)
+{
+    default_suballocator.DeviceFree(device, (void *) ptr);
+}
+
+cuda_context *get_cuda_context(void)
+{
+    int device;
+    cudaGetDevice(&device);
+
+    // if we have a cached context...
+    if (cached_gpu_context != nullptr)
+    {
+        // .. check if the device matches our own
+        if (cached_gpu_context->device == device)
+        {
+            return cached_gpu_context;
+        }
+    }
+
+    // else, check the names array
+    std::lock_guard<std::mutex> guard(gpu_context_array_mutex);
+
+    if (gpu_context_array.find(device) == gpu_context_array.end())
+    {
+        struct cuda_context *ctx = new cuda_context(device);
+        gpu_context_array[device] = ctx;
+    }
+
+    cached_gpu_context = gpu_context_array[device];
+    return gpu_context_array[device];
+}
+
+} // namespace __internal
 
 } // namespace lift

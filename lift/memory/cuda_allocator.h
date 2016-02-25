@@ -31,7 +31,8 @@
 
 #pragma once
 
-#include "../types.h"
+#include <lift/types.h>
+#include <lift/sys/cuda/cuda_context.h>
 
 namespace lift {
 
@@ -48,6 +49,25 @@ struct cuda_allocator
     void deallocate(const void *p)
     {
         cudaFree((void *)p);
+    }
+};
+
+struct cuda_suballocator
+{
+    void *allocate(size_t n_bytes)
+    {
+        void *ret;
+
+        auto ctx = __internal::get_cuda_context();
+        ret = ctx->suballocate(n_bytes);
+
+        return ret;
+    }
+
+    void deallocate(const void *p)
+    {
+        auto ctx = __internal::get_cuda_context();
+        ctx->free_suballocation(p);
     }
 };
 

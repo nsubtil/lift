@@ -160,6 +160,16 @@ struct parallel
                                  Predicate op,
                                  allocation<system, uint8>& temp_storage);
 
+    template <typename InputIterator, typename OutputIterator, typename Predicate>
+    static inline size_t copy_if(InputIterator first,
+                                 size_t len,
+                                 OutputIterator result,
+                                 Predicate op)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return copy_if(first, len, result, op, temp_storage);
+    }
+
     /**
      * Performs stream compaction based on a buffer with boolean flags.
      *
@@ -204,6 +214,14 @@ struct parallel
                            size_t len,
                            allocation<system, uint8>& temp_storage) -> typename std::iterator_traits<InputIterator>::value_type;
 
+    template <typename InputIterator>
+    static inline auto sum(InputIterator first,
+                           size_t len) -> typename std::iterator_traits<InputIterator>::value_type
+    {
+        scoped_suballocation<system, uint8> temp_allocation;
+        sum(first, len, temp_allocation);
+    }
+
     /**
      * Perform a sort-by-key on a key + value buffer pair.
      *
@@ -231,6 +249,27 @@ struct parallel
                                    allocation<system, uint8>& temp_storage,
                                    int num_key_bits = sizeof(Key) * 8);
 
+    template <typename Key, typename Value>
+    static inline void sort_by_key(pointer<system, Key>& keys,
+                                   pointer<system, Value>& values,
+                                   allocation<system, Key>& temp_keys,
+                                   allocation<system, Value>& temp_values,
+                                   int num_key_bits = sizeof(Key) * 8)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        sort_by_key(keys, values, temp_keys, temp_values, temp_storage, num_key_bits);
+    }
+
+    template <typename Key, typename Value>
+    static inline void sort_by_key(pointer<system, Key>& keys,
+                                   pointer<system, Value>& values,
+                                   int num_key_bits = sizeof(Key) * 8)
+    {
+        scoped_suballocation<system, Key> temp_keys;
+        scoped_suballocation<system, Value> temp_values;
+        sort_by_key(keys, values, temp_keys, temp_values, num_key_bits);
+    }
+
     /**
      * Sort a buffer of keys.
      *
@@ -241,11 +280,34 @@ struct parallel
      * \param keys              Pointer to the buffer containing the keys to be sorted.
      * \param temp_keys         Pointer to a temporary buffer to hold keys during sorting. Will be
      *                          resized to match the size of \c keys .
+     * \param temp_storage      Temporary storage for use by the implementation. Will be resized
+     *                          if too small.
      */
     template <typename Key>
     static inline void sort(allocation<system, Key>& keys,
                             allocation<system, Key>& temp_keys,
                             allocation<system, uint8>& temp_storage);
+
+    /**
+     * Overload of sort with automatically managed temporary storage.
+     */
+    template <typename Key>
+    static inline void sort(allocation<system, Key>& keys,
+                            allocation<system, Key>& temp_keys)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return sort(keys, temp_keys, temp_storage);
+    }
+
+    /**
+     * Overload of sort with automatically managed temporary storage and temporary key storage.
+     */
+    template <typename Key>
+    static inline void sort(allocation<system, Key>& keys)
+    {
+        scoped_suballocation<system, Key> temp_keys;
+        return sort(keys, temp_keys);
+    }
 
     /**
      * Perform a reduction by key on a key/value buffer pair.
@@ -280,6 +342,23 @@ struct parallel
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
+    template <typename KeyIterator, typename ValueIterator, typename ReductionOp>
+    static inline size_t reduce_by_key(KeyIterator keys_begin,
+                                       KeyIterator keys_end,
+                                       ValueIterator values_begin,
+                                       KeyIterator output_keys,
+                                       ValueIterator output_values,
+                                       ReductionOp reduction_op)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return reduce_by_key(keys_begin,
+                             keys_end,
+                             values_begin,
+                             output_keys,
+                             output_values,
+                             temp_storage,
+                             reduction_op);
+    }
 
     /**
      * Perform a reduction by key on a key/value buffer pair.
@@ -318,6 +397,22 @@ struct parallel
                                        allocation<system, uint8>& temp_storage,
                                        ReductionOp reduction_op);
 
+    template <typename Key, typename Value, typename ReductionOp>
+    static inline size_t reduce_by_key(pointer<system, Key>& keys,
+                                       pointer<system, Value>& values,
+                                       allocation<system, Key>& output_keys,
+                                       allocation<system, Value>& output_values,
+                                       ReductionOp reduction_op)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return reduce_by_key(keys,
+                             values,
+                             output_keys,
+                             output_values,
+                             temp_storage,
+                             reduction_op);
+    }
+
     // computes a run length encoding
     // returns the number of runs
     /**
@@ -349,6 +444,21 @@ struct parallel
                                            UniqueOutputIterator unique_keys_output,
                                            LengthOutputIterator run_lengths_output,
                                            allocation<system, uint8>& temp_storage);
+
+    template <typename InputIterator, typename UniqueOutputIterator, typename LengthOutputIterator>
+    static inline size_t run_length_encode(InputIterator keys_input,
+                                           size_t num_keys,
+                                           UniqueOutputIterator unique_keys_output,
+                                           LengthOutputIterator run_lengths_output)
+    {
+        scoped_suballocation<system, uint8> temp_storage;
+        return run_length_encode(keys_input,
+                                 num_keys,
+                                 unique_keys_output,
+                                 run_lengths_output,
+                                 temp_storage);
+    }
+
     /**
      * Parallel fill implementation. Sets each element in range [begin, end[ to value.
      * \tparam InputIterator    Iterator type
