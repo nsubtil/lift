@@ -8,6 +8,7 @@ cuda_add_library(lift ${lift_lib_sources})
 add_dependencies(lift tbb)
 
 set(lift_test_lib_sources
+    test/command_line.cpp
     test/entrypoint.cpp
     test/random.cpp
     test/test_list.cpp)

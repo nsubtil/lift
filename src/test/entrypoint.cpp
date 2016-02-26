@@ -36,6 +36,8 @@
 #include <lift/sys/host/compute_device_host.h>
 #include <lift/sys/cuda/compute_device_cuda.h>
 
+#include "command_line.h"
+
 using namespace lift;
 using namespace lift::test;
 
@@ -49,30 +51,42 @@ int main(int argc, char **argv)
     compute_device_host cpu;
     bool has_cuda;
 
+    parse_command_line(argc, argv);
+
     printf("Lift test harness\n");
-    printf("CPU: %s\n", cpu.get_name());
+
+    if (command_line_options.cpu_tests_enabled)
+    {
+        printf("CPU: %s\n", cpu.get_name());
+    }
 
     std::vector<cuda_device_config> gpu_list;
     std::string err;
 
-    cuda_device_config::enumerate_gpus(gpu_list, err);
-    if (gpu_list.size() == 0)
+    if (command_line_options.gpu_tests_enabled == false)
     {
         has_cuda = false;
     } else {
-        has_cuda = true;
-
-        if (gpu_list.size() == 1)
+        cuda_device_config::enumerate_gpus(gpu_list, err);
+        if (gpu_list.size() == 0)
         {
-            printf("GPU: %s\n", gpu_list[0].device_name);
+            has_cuda = false;
         } else {
-            printf("GPU list:\n");
-            for(size_t i = 0; i < gpu_list.size(); i++)
+            has_cuda = true;
+
+            if (gpu_list.size() == 1)
             {
-                printf("%lu: %s\n", i, gpu_list[i].device_name);
+                printf("GPU: %s\n", gpu_list[0].device_name);
+            } else {
+                printf("GPU list:\n");
+                for(size_t i = 0; i < gpu_list.size(); i++)
+                {
+                    printf("%lu: %s\n", i, gpu_list[i].device_name);
+                }
             }
         }
     }
+
     printf("\n");
 
     bool success = true;
@@ -88,6 +102,20 @@ int main(int argc, char **argv)
     {
         if (test_list[i]->need_cuda && !has_cuda)
         {
+            // skip gpu tests if no gpu present or --cpu-only was specified
+            continue;
+        }
+
+        if (command_line_options.cpu_tests_enabled == false && !test_list[i]->need_cuda)
+        {
+            // skip cpu tests if --gpu-only was specified
+            continue;
+        }
+
+        if (command_line_options.target_test_name != "" &&
+            test_list[i]->name != command_line_options.target_test_name)
+        {
+            // skip all tests that don't match the target test name from the command line
             continue;
         }
 
