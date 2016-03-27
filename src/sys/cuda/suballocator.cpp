@@ -407,7 +407,7 @@ cudaError_t CachingDeviceAllocator::DeviceFree(int             device,
             {
                 // Free the returned allocation.  Unlock.
                 if (locked) {
-                    spin_lock.lock();
+                    spin_lock.unlock();
                     locked = false;
                 }
 
