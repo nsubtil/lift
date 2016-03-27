@@ -33,6 +33,7 @@
 
 #include <string.h>
 #include <algorithm>
+#include <vector>
 
 #include <cuda_runtime.h>
 
@@ -192,6 +193,25 @@ struct allocation : public pointer<system, T, _index_type>
                 memcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size());
             }
         }
+    }
+
+    // cross-memory-space copy from raw pointer
+    void copy(target_system ptr_system, const value_type *ptr, size_t num_elements)
+    {
+        if (ptr_system == host)
+        {
+            const pointer<host, const value_type> l_ptr(ptr, num_elements);
+            copy(l_ptr);
+        } else {
+            const pointer<cuda, const value_type> l_ptr(ptr, num_elements);
+            copy(l_ptr);
+        }
+    }
+
+    // cross-memory-space copy from host std::vector
+    void copy(const std::vector<value_type>& v)
+    {
+        copy(host, v.data(), v.size());
     }
 
 protected:
