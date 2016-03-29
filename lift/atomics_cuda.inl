@@ -49,6 +49,18 @@ inline LIFT_DEVICE float atomics<cuda>::add(float *address, float val)
     return atomicAdd(address, val);
 }
 
+template <>
+inline LIFT_DEVICE int32 atomics<cuda>::max(int32 *address, int32 val)
+{
+    return atomicMax(address, val);
+}
+
+template <>
+inline LIFT_DEVICE uint32 atomics<cuda>::max(uint32 *address, uint32 val)
+{
+    return atomicMax(address, val);
+}
+
 #endif
 
 } // namespace lift

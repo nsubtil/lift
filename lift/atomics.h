@@ -40,6 +40,9 @@ struct atomics
 {
     static inline LIFT_HOST_DEVICE int32 add(int32 *address, int32 val);
     static inline LIFT_HOST_DEVICE float add(float *address, float val);
+
+    static inline LIFT_HOST_DEVICE int32 max(int32 *address, int32 val);
+    static inline LIFT_HOST_DEVICE uint32 max(uint32 *address, uint32 val);
 };
 
 } // namespace lift
