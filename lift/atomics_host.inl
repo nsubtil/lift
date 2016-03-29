@@ -65,4 +65,58 @@ inline LIFT_HOST float atomics<host>::add(float *address, float val)
     return oldval;
 }
 
+template <>
+inline LIFT_HOST uint32 atomics<host>::max(uint32 *address, uint32 val)
+{
+    volatile uint32 *addr_v = address;
+    volatile uint32 oldval;
+
+    for(;;)
+    {
+        oldval = *addr_v;
+	if (val < oldval) break;
+
+        volatile uint32 expected = oldval;
+        uint32 desired = val;
+
+
+        __atomic_compare_exchange(addr_v,
+                                  (uint32 *)&expected,
+                                  &desired,
+                                  false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+
+        if (expected == oldval)
+            break;
+    }
+
+    return oldval;
+}
+
+template <>
+inline LIFT_HOST int32 atomics<host>::max(int32 *address, int32 val)
+{
+    volatile int32 *addr_v = address;
+    volatile int32 oldval;
+
+    for(;;)
+    {
+        oldval = *addr_v;
+	if (val < oldval) break;
+
+        volatile int32 expected = oldval;
+        int32 desired = val;
+
+
+        __atomic_compare_exchange((volatile uint32 *)address,
+                                  (uint32 *)&expected,
+                                  (uint32 *)&desired,
+                                  false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+
+        if (*((uint32 *)&expected) == *((uint32 *)&oldval))
+            break;
+    }
+
+    return oldval;
+}
+
 } // namespace lift
