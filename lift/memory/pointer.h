@@ -392,12 +392,6 @@ struct pointer<host, T, _index_type> : public tagged_pointer_base<host, T, _inde
     {
         base::storage[pos] = value;
     }
-
-    // shortcut for peek, intended mostly for debug code
-    value_type operator() (const index_type idx) const
-    {
-        return peek(idx);
-    }
 };
 
 template <typename T,
