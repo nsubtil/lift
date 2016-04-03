@@ -77,8 +77,8 @@ struct tagged_pointer_base
     typedef const T*                                   const_iterator_type;
 
     /// Thrust-compatible iterator types
-    typedef thrust_iterator_adaptor<system, value_type, iterator_type>         thrust_iterator_type;
-    typedef thrust_iterator_adaptor<system, value_type, const_iterator_type>   thrust_const_iterator_type;
+    typedef thrust_iterator_adaptor<system,       value_type, iterator_type>         thrust_iterator_type;
+    typedef thrust_iterator_adaptor<system, const value_type, const_iterator_type>   thrust_const_iterator_type;
 
     /// The default constructor initializes the pointer to null
     LIFT_HOST_DEVICE tagged_pointer_base()

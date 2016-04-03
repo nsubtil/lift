@@ -6,7 +6,9 @@ set(test_src
     fill.cu
     sort.cu
     inclusive_scan.cu
-    timer.cu)
+    timer.cu
+
+    thrust/pointer_conversion.cu)
 
 cuda_add_executable(liftest ${liftest_src} ${test_src} EXCLUDE_FROM_ALL)
 target_link_libraries(liftest m liftest-lib lift ${LINK_LIBS})
