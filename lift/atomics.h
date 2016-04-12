@@ -32,6 +32,7 @@
 #pragma once
 
 #include "backends.h"
+#include "types.h"
 
 namespace lift {
 
@@ -43,6 +44,9 @@ struct atomics
 
     static inline LIFT_HOST_DEVICE int32 max(int32 *address, int32 val);
     static inline LIFT_HOST_DEVICE uint32 max(uint32 *address, uint32 val);
+
+    static inline LIFT_HOST_DEVICE int32 min(int32 *address, int32 val);
+    static inline LIFT_HOST_DEVICE uint32 min(uint32 *address, uint32 val);
 };
 
 } // namespace lift
