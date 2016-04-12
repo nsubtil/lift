@@ -31,8 +31,6 @@
 
 #pragma once
 
-#include "backends.h"
-
 namespace lift {
 
 #if LIFT_DEVICE_COMPILATION
@@ -59,6 +57,18 @@ template <>
 inline LIFT_DEVICE uint32 atomics<cuda>::max(uint32 *address, uint32 val)
 {
     return atomicMax(address, val);
+}
+
+template <>
+inline LIFT_DEVICE int32 atomics<cuda>::min(int32 *address, int32 val)
+{
+    return atomicMin(address, val);
+}
+
+template <>
+inline LIFT_DEVICE uint32 atomics<cuda>::min(uint32 *address, uint32 val)
+{
+    return atomicMin(address, val);
 }
 
 #endif
