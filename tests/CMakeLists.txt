@@ -7,6 +7,7 @@ set(test_src
     sort.cu
     inclusive_scan.cu
     timer.cu
+    util.cu
 
     thrust/pointer_conversion.cu)
 

@@ -2,8 +2,8 @@
  * Lift
  *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION
- * Copyright (c) 2015, Nuno Subtil <subtil@gmail.com>
- * Copyright (c) 2015, Roche Molecular Systems, Inc.
+ * Copyright (c) 2015-2016, Nuno Subtil <subtil@gmail.com>
+ * Copyright (c) 2015-2016, Roche Molecular Systems Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,52 +29,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <lift/test/test.h>
+#include <lift/test/check.h>
 
-#include <type_traits>
-#include <assert.h>
+#include <lift/util.h>
 
-#include <lift/decorators.h>
+using namespace lift;
 
-namespace lift {
-
-// swap two variables
-template <typename T>
-static inline LIFT_HOST_DEVICE void swap(T& a, T& b)
+// trivial test for idivup
+void test_idivup(void)
 {
-    T temp;
-    temp = a;
-    a = b;
-    b = temp;
+    LIFT_TEST_CHECK(idivup(4, 3) == 2);
+    LIFT_TEST_CHECK(idivup(4, 4) == 1);
+
+    LIFT_TEST_CHECK(idivup<unsigned int>(4, 3) == 2);
+    LIFT_TEST_CHECK(idivup<unsigned int>(4, 4) == 1);
 }
 
-// get the lane ID for a GPU thread
-static inline LIFT_DEVICE unsigned int lane_id(void)
-{
-#if LIFT_DEVICE_COMPILATION
-    unsigned int ret;
-    asm("mov.u32 %0, %laneid;" : "=r"(ret));
-    return ret;
-#else
-    assert(!"lane_id not supported on CPU");
-    return 0;
-#endif
-}
-
-// perform integer division, rounding up
-// result = (a + b - 1) / b
-template <typename T>
-static inline LIFT_HOST_DEVICE T idivup(const T a, const T b)
-{
-    // compile-time type checking: make sure we don't get floats passed in
-    static_assert(std::is_integral<T>::value && !std::is_same<T, bool>::value,
-                  "idivup requires integral numeric type");
-
-    // runtime checks: both a and b must be positive, avoid wraparound
-    assert(a > 0 && b > 0);
-    assert((a + b - 1) >= a);
-
-    return (a + (b - 1)) / b;
-}
-
-} // namespace lift
+LIFT_TEST_FUNC_HOST(integer_divide_round_up, test_idivup);
