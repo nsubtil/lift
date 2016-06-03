@@ -39,8 +39,9 @@
 namespace lift {
 
 // swap two variables
+// use unique name so STL doesn't get confused with std version
 template <typename T>
-static inline LIFT_HOST_DEVICE void swap(T& a, T& b)
+static inline LIFT_HOST_DEVICE void exchange(T& a, T& b)
 {
     T temp;
     temp = a;
