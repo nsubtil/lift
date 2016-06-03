@@ -43,7 +43,7 @@ namespace __internal {
 
 static std::map<int, cuda_context *> gpu_context_array;
 static std::mutex gpu_context_array_mutex;
-static thread_local cuda_context *cached_gpu_context = nullptr;
+static LIFT_TLS cuda_context *cached_gpu_context = nullptr;
 
 void cuda_context::set_stream(uint32 stream_id)
 {

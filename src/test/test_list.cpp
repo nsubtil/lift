@@ -38,7 +38,7 @@ namespace lift {
 namespace test {
 
 // the current test object pointer
-thread_local test_object *current_test = nullptr;
+LIFT_TLS test_object *current_test = nullptr;
 
 // function that "owns" the test list
 // this is meant to force a well-defined initialization location for the test list,

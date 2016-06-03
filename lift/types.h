@@ -46,3 +46,11 @@ typedef uint64_t uint64;
 typedef int64_t int64;
 
 } // namespace lift
+
+#if defined(__GNUC__)
+#   define LIFT_TLS __thread
+#elif defined(_MSC_VER)
+#   define LIFT_TLS __declspec(thread)
+#else // !__GNUC__ && !_MSC_VER
+#   define LIFT_TLS thread_local
+#endif
