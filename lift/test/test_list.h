@@ -32,6 +32,7 @@
 #pragma once
 
 // code that deals with keeping track of the test list
+#include <lift/types.h>
 
 #include <vector>
 
@@ -42,7 +43,7 @@ namespace test {
 struct test_object;
 
 // the current test object pointer
-extern thread_local test_object *current_test;
+extern LIFT_TLS test_object *current_test;
 
 // returns a reference to the global test list
 std::vector<test_object *>& get_test_list(void);
