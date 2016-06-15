@@ -167,32 +167,10 @@ struct allocation : public pointer<system, T, _index_type>
     template <typename other_allocation>
     void copy(const other_allocation& other)
     {
-        __internal::check_value_type_assignment_compatible<value_type, typename other_allocation::value_type>();
-
         resize(other.size());
 
-        if (system == cuda)
-        {
-            // copying to GPU...
-            if (target_system(other_allocation::system_tag) == cuda)
-            {
-                // ... from the GPU
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToDevice);
-            } else {
-                // ... from the host
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyHostToDevice);
-            }
-        } else {
-            // copying to host...
-            if (target_system(other_allocation::system_tag) == cuda)
-            {
-                // ... from the GPU
-                cudaMemcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToHost);
-            } else {
-                // ... from the host
-                memcpy((void *) base::data(), other.data(), sizeof(value_type) * other.size());
-            }
-        }
+        // call tagged_pointer_base version.
+        base::copy(other);
     }
 
     // cross-memory-space copy from raw pointer

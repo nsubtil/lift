@@ -137,6 +137,40 @@ struct tagged_pointer_base
         return *this;
     }
 
+    // cross-memory-space copy from another pointer
+    // note that this does not handle copies across different GPUs
+    template <target_system other_system, typename other_value_type>
+    LIFT_HOST_DEVICE void copy(const tagged_pointer_base<other_system, other_value_type, index_type>& other)
+    {
+        __internal::check_value_type_assignment_compatible<value_type, other_value_type>();
+
+        // Make sure enough space for copy on destination
+        assert(storage_size >= other.size());
+
+        if (system == cuda)
+        {
+            // copying to GPU...
+            if (other_system == cuda)
+            {
+                // ... from the GPU
+                cudaMemcpy((void *) data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToDevice);
+            } else {
+                // ... from the host
+                cudaMemcpy((void *) data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyHostToDevice);
+            }
+        } else {
+            // copying to host...
+            if (other_system == cuda)
+            {
+                // ... from the GPU
+                cudaMemcpy((void *) data(), other.data(), sizeof(value_type) * other.size(), cudaMemcpyDeviceToHost);
+            } else {
+                // ... from the host
+                memcpy((void *) data(), other.data(), sizeof(value_type) * other.size());
+            }
+        }
+    }
+
     LIFT_HOST_DEVICE const_reference_type at(size_type pos) const
     {
         return storage[pos];
