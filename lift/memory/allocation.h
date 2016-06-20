@@ -133,6 +133,9 @@ struct allocation : public pointer<system, T, _index_type>
 
     virtual void resize(size_type count)
     {
+        // no-op if the size is the same
+        if (storage_size == count) return;
+
         size_type old_storage_size;
         pointer_type old_storage;
 
