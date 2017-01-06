@@ -12,10 +12,10 @@ option(USE_EXTERNAL_THRUST
 # parent project might define GPU architecture
 if (NOT DEFINED GPU_ARCHITECTURE)
     if (DEFINED ENV{LIFT_GPU_ARCHITECTURE})
-        set(GPU_ARCHITECTURE $ENV{LIFT_GPU_ARCHITECTURE} CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
+        set(GPU_ARCHITECTURE $ENV{LIFT_GPU_ARCHITECTURE} CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52, sm_61)")
     else ()
         # allow setting the list of GPU architectures on the command line
-        set(GPU_ARCHITECTURE "sm_35,sm_52" CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52)")
+        set(GPU_ARCHITECTURE "sm_30,sm_35,sm_52,sm_61" CACHE STRING "GPU architectures to generate code for (defaults to sm_30, sm_35, sm_52, sm_61)")
     endif ()
 endif ()
 
